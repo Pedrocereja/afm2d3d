@@ -1,7 +1,5 @@
 include "include/ARRAYS.edp"
 include "include/FETOOLS.edp"
-include "include/MACROS2D.edp"
-include "include/MACROS3D.edp"
 include "include/REDSYS.edp"
 
 load "gmsh"
@@ -38,7 +36,7 @@ real nucoil = 1./mucoil; // coil reluctivity
 IFMACRO(DIM,2)
 include "afm2D.def"
 include "afm2D.init"
-include "MACROS2D.edp"
+include "include/MACROS2D.edp"
 // directory where the results should be saved
 string DIRres="results/2D/";
 
@@ -133,7 +131,7 @@ ENDIFMACRO
 IFMACRO(DIM,3)
 include "afm3D.def"
 include "afm3D.init"
-include "MACROS3D.edp"
+include "include/MACROS3D.edp"
 // directory where the results should be saved
 string DIRres="results/3D/";
 

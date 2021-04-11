@@ -1,0 +1,327 @@
+macro REDSYSedp() //
+
+macro RedSysDirichlet(type, A, B, dirdof, dirtest, dirdofvalue)
+/* RedSysDirichlet(type, A, B, dirdof, dirtest, dirdofvalue) /*
+/* reduces the the system Ax=B by eliminating the dof and test function for which Dirichlet conditions are considered*/
+/* dirdof is a vector of "type" values =1 for dofs with Dirichlet conditions and 0 for the other dofs */
+/* dirdofvalue is a vector of "type" values for the dofs with Dirichlet conditions, must be 0 on non-Dirichlet dofs */
+/* dirtest is a vector of "type" values =1 for test functions with Dirichlet conditions and 0 for the other test functions */
+matrix<type> A#red; /* reduced system matrix */
+int[int] A#spandof; /* index of reduced dofs in the original system. Be careful: Dirichlet dofs are associated to reduced index 0 */
+int[int] A#inddirdof; /* index of Dirichlet dofs in the original system */
+type[int] B#red; /* reduced system right-hand side*/
+{
+if(!((A.n==B.n)&&(A.m==dirdof.n)
+	 &&(A.n==dirtest.n)&&(A.m==dirdofvalue.n)))
+{
+cout << "error in file "<< FILE << " at line " << LINE << endl;
+assert(0);
+}
+
+int[int] I,J;
+type[int] v;
+/*[I,J,v]=A;*/
+IJvM(I,J,v,A);
+
+/*set to zero the values of v associated with a dirichlet dof */
+type[int] notdirdof(dirdof.n);
+for(int i=0;i<dirdof.n;++i) notdirdof(i)=1-dirdof(i);
+type[int] vnotdirdof(v.n);
+vnotdirdof=notdirdof(J);
+v.*=vnotdirdof;
+
+/* dof reduction */
+int[int] reddof;
+int[int] nit,nif,oit,oif;
+splitTrueFalse(dirdof, nit,reddof,A#inddirdof,oif); /*function from ARRAYS.edp used for the indexing after dofs remotion */
+
+A#spandof=[reddof];
+
+J=reddof(J);
+
+/*add a null term to ensure the correct block size */
+
+I=[I,A.n-1];
+J=[J,reddof.max];
+v=[v,0];
+
+A#red=[I,J,v];
+
+/*include Dirichlet values in right-hand side*/
+type[int] Bd=A*dirdofvalue; /*dirdofvalue eventually non-zero only on Dirichlet DOF */
+Bd*=-1;
+Bd+=B;
+
+/*test functions reduction */
+IJvM(I,J,v,A#red);
+
+/*eliminate values of v in dirichlet test functions */
+type[int] notdirtest(dirtest.n);
+for(int i=0;i<dirtest.n;++i) notdirtest(i)=1-dirtest(i);
+type[int] vnotdirtest(v.n);
+vnotdirtest=notdirtest(I);
+v.*=vnotdirtest;
+
+int[int] redtest;
+splitTrueFalse(dirtest, nit,redtest,oit,oif);
+
+I=redtest(I);
+
+/*add a null term to ensure the correct block size */
+I=[I,redtest.max];
+J=[J,A#red.m-1];
+v=[v,0];
+A#red=[I,J,v];
+
+/*reduce right-hand side */
+type[int] Bt(A#red.n);
+Bt=Bd(oif);
+
+B#red=[Bt];
+}
+// EOM RedSysDirichlet
+
+macro ExtensionMatrix(type, flagiso, Mconnect, connectcoef,id)
+matrix<type> MatExt#id;
+int[int] masterind#id;
+{
+	if((Mconnect.n!=flagiso.n)||(connectcoef.n!=flagiso.n))
+	{
+		cout << " error in file " << FILE << " at line " << LINE << endl;
+		assert(0);
+	}
+int nn=Mconnect.n;
+int[int] flagslave(Mconnect.n);
+flagslave(:)=0;
+
+int[int] I,J;
+type[int] v;
+/*[I,J,v]=Mconnect;*/
+IJvM(I,J,v,Mconnect); /* connection matrix Slave = Mconnect * Master */
+
+type[int] tempcoef(I.n);
+tempcoef=connectcoef(I);
+v.*=tempcoef;
+
+int[int] UniqueI;
+int[int] UniqueJ;
+if(v.n>1)
+{
+	if(v(v.n-1)==0)
+	{
+		/* eliminate last entry */
+		if(v.n>2)
+		{
+			I=[I(0:(I.n-2))];
+			J=[J(0:(J.n-2))];
+			v=[v(0:(v.n-2))];
+		}else{
+			I=[I(0)];
+			J=[J(0)];
+			v=[v(0)];
+		}
+	}
+	Unique(I, UniqueI);
+	Unique(J, UniqueJ);
+
+	int[int] ones(UniqueI.n);
+	ones(:)=1;
+	flagslave(UniqueI)=ones;
+}
+
+int[int] Iiso,Jiso;
+
+int[int][int] indiso(flagiso.m);
+int[int] nindiso(flagiso.m);
+bool biso=false;
+
+for(int j=0;j<flagiso.m;++j)
+{
+	nindiso(j)=flagiso(:,j).sum;
+/*
+	if(nindiso(j)<1)
+	{
+		cout << " error in file " << FILE << " at line " << LINE << endl;
+		assert(0);
+	}
+	*/
+	if(nindiso(j)>1)
+	{
+		biso=true;
+		int[int] zz(nindiso(j));
+		indiso[j]=[zz];
+		int c=0;
+		for(int i=0;i<flagiso.n;++i)
+		{
+			if(flagiso(i,j)==1)
+			{
+				indiso[j](c)=i;
+				if(c>0) /*c==0 master index for this iso*/
+				{
+					flagslave(i)=1; /*flag current iso index*/
+					Iiso=[Iiso, i];
+					Jiso=[Jiso, indiso[j](0)];
+				}else{
+					masterind#id=[masterind#id,i];
+				}
+				++c;
+			}
+		}
+	}
+}
+
+
+masterind#id=[masterind#id,UniqueJ];
+
+int[int] nit,nif,oit,oif;
+splitTrueFalse(flagslave, nit,nif,oit,oif);
+
+int nmast=nn-flagslave.sum;
+type[int] vmast(nmast);
+vmast(:)=1;
+
+type[int] viso;
+if(biso)
+{
+	type[int] temp(Iiso.n);
+	viso=[temp];
+	viso(:)=1;
+}
+
+I=[I,Iiso,oif];
+J=[J,Jiso,oif];
+v=[v,viso,vmast];
+
+J=nif(J);
+
+MatExt#id=[I,J,v];
+}
+// EOM ExtensionMatrix
+
+macro ExtensionMatrix2(type, flagiso, Mconnect, connectcoef,dirdof,id)
+matrix<type> MatExt#id;
+int[int] masterind#id;
+{
+	if((Mconnect.n!=flagiso.n)||(connectcoef.n!=flagiso.n))
+	{
+		cout << " error in file " << FILE << " at line " << LINE << endl;
+		assert(0);
+	}
+int nn=Mconnect.n;
+int[int] flagslave(Mconnect.n);
+flagslave(:)=0;
+
+int[int] I,J;
+type[int] v;
+/*[I,J,v]=Mconnect;*/
+IJvM(I,J,v,Mconnect); /* connection matrix Slave = Mconnect * Master */
+
+/*set to zero the values of v associated with a dirichlet dofs: the case of periodicity involving dirichlet dof (with non-zero value) AND other dofs is not treated*/
+type[int] notdirdof(dirdof.n);
+for(int i=0;i<dirdof.n;++i) notdirdof(i)=1-dirdof(i);
+type[int] vnotdirdof(v.n);
+vnotdirdof=notdirdof(J);
+v.*=vnotdirdof;
+vnotdirdof=notdirdof(I);
+v.*=vnotdirdof;
+Mconnect=[I,J,v];
+IJvM(I,J,v,Mconnect); /* connection matrix Slave = Mconnect * Master  after elimination of dof with Dirichlet condition*/
+
+type[int] tempcoef(I.n);
+tempcoef=connectcoef(I);
+v.*=tempcoef;
+
+int[int] UniqueI;
+int[int] UniqueJ;
+if(v.n>1)
+{
+	if(v(v.n-1)==0)
+	{
+		/* eliminate last entry */
+		if(v.n>2)
+		{
+			I=[I(0:(I.n-2))];
+			J=[J(0:(J.n-2))];
+			v=[v(0:(v.n-2))];
+		}else{
+			I=[I(0)];
+			J=[J(0)];
+			v=[v(0)];
+		}
+	}
+	Unique(I, UniqueI);
+	Unique(J, UniqueJ);
+
+	int[int] ones(UniqueI.n);
+	ones(:)=1;
+	flagslave(UniqueI)=ones;
+}
+
+int[int] Iiso,Jiso;
+
+int[int][int] indiso(flagiso.m);
+int[int] nindiso(flagiso.m);
+bool biso=false;
+
+for(int j=0;j<flagiso.m;++j)
+{
+	nindiso(j)=flagiso(:,j).sum;
+/*
+	if(nindiso(j)<1)
+	{
+		cout << " error in file " << FILE << " at line " << LINE << endl;
+		assert(0);
+	}
+	*/
+	if(nindiso(j)>1)
+	{
+		biso=true;
+		int[int] zz(nindiso(j));
+		indiso[j]=[zz];
+		int c=0;
+		for(int i=0;i<flagiso.n;++i)
+		{
+			if(flagiso(i,j)==1)
+			{
+				indiso[j](c)=i;
+				if(c>0) /*c==0 master index for this iso*/
+				{
+					flagslave(i)=1; /*flag current iso index*/
+					Iiso=[Iiso, i];
+					Jiso=[Jiso, indiso[j](0)];
+				}else{
+					masterind#id=[masterind#id,i];
+				}
+				++c;
+			}
+		}
+	}
+}
+
+
+masterind#id=[masterind#id,UniqueJ];
+
+int[int] nit,nif,oit,oif;
+splitTrueFalse(flagslave, nit,nif,oit,oif);
+
+int nmast=nn-flagslave.sum;
+type[int] vmast(nmast);
+vmast(:)=1;
+
+type[int] viso;
+if(biso)
+{
+	type[int] temp(Iiso.n);
+	viso=[temp];
+	viso(:)=1;
+}
+
+I=[I,Iiso,oif];
+J=[J,Jiso,oif];
+v=[v,viso,vmast];
+
+J=nif(J);
+
+MatExt#id=[I,J,v];
+}
+// EOM ExtensionMatrix

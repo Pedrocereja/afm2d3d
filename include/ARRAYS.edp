@@ -1,0 +1,802 @@
+int[int] tempintint=[0];
+
+func int[int] Real2Int(real[int] &a)
+{
+	int[int] ia(a.n);
+	for(int i=0;i<a.n;++i)
+		ia(i)=lrint(a(i));
+
+	return ia;
+}
+
+func real[int] Int2Real(int[int] &a)
+{
+	real[int] ia(a.n);
+	for(int i=0;i<a.n;++i)
+		ia(i)=a(i);
+
+	return ia;
+}
+
+func int[int] flagIntersection(int[int] &a, int[int] &b)
+{
+	if(a.n!=b.n)
+	{
+		cout << "error in file " << FILE << " at line " << LINE << endl;
+		assert(0);
+	}
+	int[int] c(a.n);
+	c(:)=0;
+	for(int i=0;i<a.n;++i)
+		if((a(i)>0.5)&&(b(i)>0.5)) c(i)=1;
+}
+
+func int[int] flagUnion(int[int] &a, int[int] &b)
+{
+	if(a.n!=b.n)
+	{
+		cout << "error in file " << FILE << " at line " << LINE << endl;
+		assert(0);
+	}
+	int[int] c(a.n);
+	c(:)=0;
+	for(int i=0;i<a.n;++i)
+		if((a(i)>0.5)||(b(i)>0.5)) c(i)=1;
+}
+
+func int[int] flagDiff(int[int] &a, int[int] &b)
+{
+	if(a.n!=b.n)
+	{
+		cout << "error in file " << FILE << " at line " << LINE << endl;
+		assert(0);
+	}
+	int[int] c(a);
+	for(int i=0;i<a.n;++i)
+		if(b(i)>0.5) c(i)=0;
+}
+
+func int splitTrueFalse(int[int] &v, int[int] &newindTrue, int[int] &newindFalse,int[int] &oldindTrue, int[int] &oldindFalse)
+// v (input) is a vector of 1 and 0
+// newindTrue (output, resized to v.n): new index for each true (1) of v. False (0) of v are all given new index 0.
+// newindFalse (output, resized to v.n): new index for each false (0) of v. True (1) of v are all given new index 0.
+// oldindTrue (output, resized to v.sum): index in v of true (1) values.
+// oldindFalse (output, resized to (v.n-v.sum)): index in v of false (0) values.
+{
+int nt=v.sum;
+int nf=v.n-nt;
+
+int[int] temp(v.n);
+temp(:)=0;
+newindTrue=[temp];
+newindFalse=[temp];
+int[int] tempt(nt),tempf(nf);
+tempt(:)=0; tempf(:)=0;
+oldindTrue=[tempt];
+oldindFalse=[tempf];
+
+int iit=0, iif=0;
+for(int i=0;i<v.n;++i)
+{
+	if(v(i)==1)
+	{
+		newindTrue(i)=iit;
+		oldindTrue(iit)=i;
+		++iit;
+	}else{
+		if(v(i)==0)
+		{
+		newindFalse(i)=iif;
+		oldindFalse(iif)=i;
+		++iif;
+		}else{
+			cout << "error in file " << FILE << " at line " << LINE << endl;
+			assert(0);
+		}
+	}
+}
+return 0;
+}
+
+func int splitTrueFalse(real[int] &v, int[int] &newindTrue, int[int] &newindFalse,int[int] &oldindTrue, int[int] &oldindFalse)
+{
+	int[int] intv=Real2Int(v);
+	splitTrueFalse(intv, newindTrue, newindFalse, oldindTrue, oldindFalse);
+}
+
+func int[int] NzIndex(int[int] &v)
+{
+	int nnz;
+	for(int i=0;i<v.n;++i)	if(abs(v(i))>0) { ++nnz;}
+
+	int[int] indnz(nnz);
+	int count=0;
+	for(int i=0;i<v.n;++i) if(abs(v(i))>0) {indnz(count++)=i;}
+
+	return indnz;
+}
+
+func int[int] NzIndex(real[int] &v)
+{
+	int nnz;
+	for(int i=0;i<v.n;++i)	if(abs(v(i))>0) { ++nnz;}
+
+	int[int] indnz(nnz);
+	int count=0;
+	for(int i=0;i<v.n;++i) if(abs(v(i))>0) {indnz(count++)=i;}
+
+	return indnz;
+}
+
+func int[int] NzIndex(complex[int] &v)
+{
+	int nnz;
+	for(int i=0;i<v.n;++i)	if(abs(v(i))>0) { ++nnz;}
+
+	int[int] indnz(nnz);
+	int count=0;
+	for(int i=0;i<v.n;++i) if(abs(v(i))>0) {indnz(count++)=i;}
+
+	return indnz;
+}
+
+func int IJvM(int[int] &I, int[int] &J, real[int] &v, matrix &M)
+{
+if(M.n==0)
+{
+	int[int] temp;
+	I=[temp]; J=[temp];
+	real[int] rtemp;
+	v=[rtemp];
+}else{
+	[I,J,v]=M;
+	if(M.nnz>1)
+	{
+		I=[I(0:M.nnz-1)]; J=[J(0:M.nnz-1)]; v=[v(0:M.nnz-1)];
+	}else{
+		I=[I(0)];J=[J(0)]; v=[v(0)];
+	}
+	int[int] indnz = NzIndex(v);
+	int nnz=indnz.n;
+	if(nnz==0)
+	{
+		I=[M.n-1];
+		J=[M.m-1];
+		v=[0];
+	}else{
+		int[int] temp(nnz);
+		temp=I(indnz); I=[temp];
+		temp=J(indnz); J=[temp];
+		real[int] rtemp(nnz);
+		rtemp=v(indnz); v=[rtemp];
+
+		if((I.max<(M.n-1))||(J.max<(M.m-1)))
+		{
+			I=[I,M.n-1];
+			J=[J,M.m-1];
+			v=[v,0];
+		}
+	}
+
+	/*M=[I,J,v];*/
+}
+return 0;
+}
+
+func int IJvM(int[int] &I, int[int] &J, complex[int] &v, matrix<complex> &M)
+{
+if(M.n==0)
+{
+	int[int] temp;
+	I=[temp]; J=[temp];
+	complex[int] rtemp;
+	v=[rtemp];
+}else{
+[I,J,v]=M;
+if(M.nnz>1)
+{
+	I=[I(0:M.nnz-1)]; J=[J(0:M.nnz-1)]; v=[v(0:M.nnz-1)];
+}else{
+	I=[I(0)];J=[J(0)]; v=[v(0)];
+}
+int[int] indnz = NzIndex(v);
+int nnz=indnz.n;
+if(nnz==0)
+{
+	I=[M.n-1];
+	J=[M.m-1];
+	v=[0];
+}else{
+	int[int] temp(nnz);
+	temp=I(indnz); I=[temp];
+	temp=J(indnz); J=[temp];
+	complex[int] rtemp(nnz);
+	rtemp=v(indnz); v=[rtemp];
+
+	if((I.max<(M.n-1))||(J.max<(M.m-1)))
+	{
+		I=[I,M.n-1];
+		J=[J,M.m-1];
+		v=[v,0];
+	}
+}
+
+/*M=[I,J,v];*/
+}
+return 0;
+}
+
+func int CleanSparseMatrix(matrix &M, real th)
+{
+	int[int] I,J;
+	real[int] v;
+	IJvM(I,J,v,M);
+	for(int i=0; i<v.n;++i) if(abs(v(i))<th) v(i)=0;
+	M=[I,J,v];
+	return 0;
+}
+
+func int CleanSparseMatrix(matrix<complex> &M, real th)
+{
+	int[int] I,J;
+	complex[int] v;
+	IJvM(I,J,v,M);
+	for(int i=0; i<v.n;++i) if(abs(v(i))<th) v(i)=0;
+	M=[I,J,v];
+	return 0;
+}
+
+func int FirstOccurenceInArray(int &a, int[int] &b)
+{
+	int j=-1;
+	int i=0;
+	if(b.n>0)
+	{
+	while((j<0)&&(i<b.n))
+	{
+		if(b(i)==a)
+		{
+			j=i;
+		}else{
+			++i;
+		}
+	}
+	}
+	return j;
+}
+
+func int[int] Unique(int[int] &a, int[int] &b)
+{
+	int[int] iu;
+	b=[iu];
+	for(int i=0;i<a.n;++i)
+	{
+		int uu=FirstOccurenceInArray(a(i),b);
+		if(uu<0)
+		{
+			b=[b,a(i)];
+			iu=[iu,i];
+		}
+	}
+	return iu;
+}
+
+//intersection of integer sets
+func int[int] IntersectionPositiveIntArrays(int[int] &a, int[int] &b)
+{
+	int[int] indinter;
+	if((a.n>0)&&(b.n>0))
+	{
+	int maxa=a.max;
+	int maxb=b.max;
+	int nc=max(maxa,maxb);
+	int[int] c(nc+1),cc(nc+1);
+	int[int] onea(a.n), oneb(b.n);
+	onea(:)=1;
+	oneb(:)=1;
+	c(a)=onea;
+	cc(b)=oneb;
+	c+=cc;
+	for(int i=0;i<c.n;++i)
+	{
+		if(c(i)==2)
+			indinter=[indinter,i];
+	}
+	}
+	return indinter;
+}
+
+// functions to extract subarrays
+
+func int[int] SubArrayPositive(int[int] &v)
+{
+	int np=0;
+	for(int i=0;i<v.n;++i)
+		if(v(i)>0)
+			++np;
+
+	int[int] subv(np);
+	int ii=0;
+	for(int i=0;i<v.n;++i)
+		if(v(i)>0)
+		{
+			subv(ii)=v(i);
+			++ii;
+		}
+
+	return subv;
+}
+
+func int[int] SubArray(int[int] &v,int[int] &ii)
+{
+	int[int] temp(ii.n);
+	temp=v(ii);
+	return temp;
+}
+
+func real[int] SubArray(real[int] &v,int[int] &ii)
+{
+	real[int] temp(ii.n);
+	temp=v(ii);
+	return temp;
+}
+
+
+// function to return the indices of the positive entries of a vector
+func int[int] IndPositive(int[int] &v)
+{
+	int np=0;
+	for(int i=0;i<v.n;++i)
+		if(v(i)>0)
+			++np;
+
+	int[int] ind(np);
+	int ii=0;
+	for(int i=0;i<v.n;++i)
+		if(v(i)>0)
+		{
+			ind(ii)=i;
+			++ii;
+		}
+
+	return ind;
+}
+
+// function to return the indices of the negative entries of a vector
+func int[int] IndNegative(int[int] &v)
+{
+	int[int] mv=-v;
+//	cout << " v = " << v << endl;
+	return IndPositive(mv);
+}
+
+
+// functions that return the product of the entries of v between i0 and i1 (included)
+
+func int Prod(int[int] &v,int i0,int i1)
+{
+	int prod=1;
+	for(int i=i0;i<(i1+1);++i)
+		prod*=v(i);
+
+	return prod;
+}
+func int Prod(int[int] &v)
+{
+	return Prod(v,0,(v.n-1));
+}
+func real Prod(real[int] &v,int i0,int i1)
+{
+	real prod=1;
+	for(int i=i0;i<(i1+1);++i)
+		prod*=v(i);
+
+	return prod;
+}
+
+func real Prod(real[int] &v)
+{
+	return Prod(v,0,(v.n-1));
+}
+
+
+macro settempintint(ii) {int[int] temp(ii); tempintint=[temp];} //
+
+// simulates multiple index arrays
+
+//type of array
+macro typearr(a,type) type[int] &a, int[int] &a#DiM //
+
+//components of array structure
+macro structarr(a) a, a#DiM //
+
+//size of an array
+macro isizearr(a,i) a#DiM(i) //
+
+//dimensions of an array
+macro sizearr(a) a#DiM //
+
+// to define the array
+macro defarr(a,type,dim)          int[int] a#DiM=dim; type[int] a(Prod(a#DiM));  //
+macro realarr(a,dim)     defarr(a,real,dim)       //
+macro intarr(a,dim)     defarr(a,int,dim)       //
+
+// define a copy of an array
+macro defcopyarr(a,type,b)          defarr(a,type,[1]) copyarr(a,b) //
+
+// copy an array in a existing array
+macro copyarr(a,b)          a=[b]; a#DiM=[b#DiM];  //
+
+// define a copy of a sub-array
+macro defcopysubarr(a,type,b,ii)    defarr(a,type,[1]) copysubarr(a,b,ii)  //
+
+// copy a sub-array in a existing array
+//macro copysubarr(a,b,ii)          a=[SubArray(b,Iarr(b,ii))]; a#DiM=[SubArray(b#DiM,IndNegative(ii))];  //
+macro copysubarr(a,b,ii)  settempintint(ii) a=[SubArray(b,Iarr(b,tempintint))]; a#DiM=[SubArray(b#DiM,IndNegative(tempintint))];  //
+// setting "a" by "int[int] a=[f()]" makes 2 calls to f(), while "int[int] a(f())" makes only one call
+
+//to access an array entry from indices
+macro arr(a,ii)       a(arrind(ii,a#DiM)) //
+
+//to generate a vector of indices, (-1) is the "colon" operator
+macro Iarr(a,ii)       fIarr(ii,a#DiM) //
+
+//to print an array
+macro printarr(ofs,a) ofs << Stringification(a) << endl; for(int i=0;i<a#DiM.n;++i){ofs << a#DiM(i) <<" ";} ofs << endl; for(int i=0;i<a.n;++i) { ofs << a(i) << " "; if((i+1)%a#DiM(0)==0) ofs << endl;} ofs << endl; //
+
+
+//simulate list
+macro deflist(a,type) type[int] a; int[int] a#index=[0]; //
+//type of list
+macro typelist(a,type) type[int] &a, int[int] &a#index //
+macro reallist(a) deflist(a,real) //
+macro intlist(a) deflist(a,int) //
+macro addlist(a,b) a#index=[a#index,a.n+b.n]; a=[a,b];  //
+macro Ilist(a,i) Indlist(a#index, i) //
+macro nlist(a,i) numlist(a#index, i) //
+
+macro copylist(a,b) a=[b]; a#index=[b#index]; //
+
+macro defcopylist(a,type,b) deflist(a,type) copylist(a,b) //
+
+macro printlist(ofs,a) ofs << Stringification(a) << endl; for(int i=0;i<(a#index.n-1);++i){ for(int j=a#index(i);j<a#index(i+1);++j) {ofs << a(j) << " "; } ofs << endl; } //
+
+
+func int arrind(int[int] &ii,int[int] &aDiM)
+{
+	int ind=ii(0);
+	for(int i=1;i<aDiM.n;++i)
+		ind+=(ii(i)*Prod(aDiM,0,i-1));
+	return ind;
+}
+
+
+func int[int] fii(int i0)
+{
+	int[int] ii(1);
+	ii(0)=i0;
+	return ii;
+}
+
+func int[int] fii(int i0,int i1)
+{
+	int[int] ii(2);
+	ii(0)=i0; ii(1)=i1;
+	return ii;
+}
+
+func int[int] fii(int i0,int i1, int i2)
+{
+	int[int] ii(3);
+	ii(0)=i0; ii(1)=i1; ii(2)=i2;
+	return ii;
+}
+
+func int[int] fii(int i0,int i1, int i2, int i3)
+{
+	int[int] ii(4);
+	ii(0)=i0; ii(1)=i1; ii(2)=i2; ii(3)=i3;
+	return ii;
+}
+
+func int[int] fii(int i0,int i1, int i2, int i3, int i4)
+{
+	int[int] ii(5);
+	ii(0)=i0; ii(1)=i1; ii(2)=i2; ii(3)=i3; ii(4)=i4;
+	return ii;
+}
+
+//// to define the array
+//macro defarr2(a,type,n1,n2)          type[int] a(n1*n2)         ; int a#DiMeNsIoN1 = n1; int a#DiMeNsIoN2 = n2;  //
+//macro defarr3(a,type,n1,n2,n3)       type[int] a(n1*n2*n3)      ; int a#DiMeNsIoN1 = n1; int a#DiMeNsIoN2 = n2; int a#DiMeNsIoN3 = n3;  //
+//macro defarr4(a,type,n1,n2,n3,n4)    type[int] a(n1*n2*n3*n4)   ; int a#DiMeNsIoN1 = n1; int a#DiMeNsIoN2 = n2; int a#DiMeNsIoN3 = n3; int a#DiMeNsIoN4 = n4;  //
+//macro defarr5(a,type,n1,n2,n3,n4,n5) type[int] a(n1*n2*n3*n4*n5); int a#DiMeNsIoN1 = n1; int a#DiMeNsIoN2 = n2; int a#DiMeNsIoN3 = n3; int a#DiMeNsIoN4 = n4; int a#DiMeNsIoN5 = n5;  //
+//
+//
+//// to define the array
+//macro int2(a,n1,n2)          int[int] a(n1*n2)         ; int a#DiMeNsIoN1 = n1; int a#DiMeNsIoN2 = n2;  //
+//macro int3(a,n1,n2,n3)       int[int] a(n1*n2*n3)      ; int a#DiMeNsIoN1 = n1; int a#DiMeNsIoN2 = n2; int a#DiMeNsIoN3 = n3;  //
+//macro int4(a,n1,n2,n3,n4)    int[int] a(n1*n2*n3*n4)   ; int a#DiMeNsIoN1 = n1; int a#DiMeNsIoN2 = n2; int a#DiMeNsIoN3 = n3; int a#DiMeNsIoN4 = n4;  //
+//macro int5(a,n1,n2,n3,n4,n5) int[int] a(n1*n2*n3*n4*n5); int a#DiMeNsIoN1 = n1; int a#DiMeNsIoN2 = n2; int a#DiMeNsIoN3 = n3; int a#DiMeNsIoN4 = n4; int a#DiMeNsIoN5 = n5;  //
+//
+//// to define the array
+//macro real2(a,n1,n2)          real[int] a(n1*n2)         ; int a#DiMeNsIoN1 = n1; int a#DiMeNsIoN2 = n2;  //
+//macro real3(a,n1,n2,n3)       real[int] a(n1*n2*n3)      ; int a#DiMeNsIoN1 = n1; int a#DiMeNsIoN2 = n2; int a#DiMeNsIoN3 = n3;  //
+//macro real4(a,n1,n2,n3,n4)    real[int] a(n1*n2*n3*n4)   ; int a#DiMeNsIoN1 = n1; int a#DiMeNsIoN2 = n2; int a#DiMeNsIoN3 = n3; int a#DiMeNsIoN4 = n4;  //
+//macro real5(a,n1,n2,n3,n4,n5) real[int] a(n1*n2*n3*n4*n5); int a#DiMeNsIoN1 = n1; int a#DiMeNsIoN2 = n2; int a#DiMeNsIoN3 = n3; int a#DiMeNsIoN4 = n4; int a#DiMeNsIoN5 = n5;  //
+//
+////to access an array entry from indices
+//macro arr2(a,i,j)       a(i+j*a#DiMeNsIoN1) //
+//macro arr3(a,i,j,k)     a(i+j*a#DiMeNsIoN1+k*a#DiMeNsIoN1*a#DiMeNsIoN2) //
+//macro arr4(a,i,j,k,l)   a(i+j*a#DiMeNsIoN1+k*a#DiMeNsIoN1*a#DiMeNsIoN2+l*a#DiMeNsIoN1*a#DiMeNsIoN2*a#DiMeNsIoN3) //
+//macro arr5(a,i,j,k,l,m) a(i+j*a#DiMeNsIoN1+k*a#DiMeNsIoN1*a#DiMeNsIoN2+l*a#DiMeNsIoN1*a#DiMeNsIoN2*a#DiMeNsIoN3+m*a#DiMeNsIoN1*a#DiMeNsIoN2*a#DiMeNsIoN3*a#DiMeNsIoN4) //
+//
+////to generate a vector of indices, (-1) is the "colon" operator
+//macro Iarr2(a,i,j)       fIarr(i, j, a#DiMeNsIoN1,a#DiMeNsIoN2) //
+//macro Iarr3(a,i,j,k)     fIarr(i, j, k, a#DiMeNsIoN1,a#DiMeNsIoN2,a#DiMeNsIoN3) //
+//macro Iarr4(a,i,j,k,l)   fIarr(i, j, k, l, a#DiMeNsIoN1,a#DiMeNsIoN2,a#DiMeNsIoN3,a#DiMeNsIoN4) //
+
+// to define the array
+macro defarr2(a,type,n1,n2)          defarr(a,type,fii(n1,n2)         ) //
+macro defarr3(a,type,n1,n2,n3)       defarr(a,type,fii(n1,n2,n3)      ) //
+macro defarr4(a,type,n1,n2,n3,n4)    defarr(a,type,fii(n1,n2,n3,n4)   ) //
+macro defarr5(a,type,n1,n2,n3,n4,n5) defarr(a,type,fii(n1,n2,n3,n4,n5)) //
+
+
+// to define the array
+macro int2(a,n1,n2)          defarr2(a,int,n1,n2)  //
+macro int3(a,n1,n2,n3)       defarr3(a,int,n1,n2,n3) //
+macro int4(a,n1,n2,n3,n4)    defarr4(a,int,n1,n2,n3,n4) //
+macro int5(a,n1,n2,n3,n4,n5) defarr5(a,int,n1,n2,n3,n4,n5) //
+
+// to define the array
+macro real2(a,n1,n2)          defarr2(a,real,n1,n2)  //
+macro real3(a,n1,n2,n3)       defarr3(a,real,n1,n2,n3) //
+macro real4(a,n1,n2,n3,n4)    defarr4(a,real,n1,n2,n3,n4) //
+macro real5(a,n1,n2,n3,n4,n5) defarr5(a,real,n1,n2,n3,n4,n5) //
+
+//to access an array entry from indices
+macro arr2(a,i,j)       arr(a,fii(i,j)) //
+macro arr3(a,i,j,k)     arr(a,fii(i,j,k)) //
+macro arr4(a,i,j,k,l)   arr(a,fii(i,j,k,l)) //
+macro arr5(a,i,j,k,l,m) arr(a,fii(i,j,k,l,m)) //
+
+//to generate a vector of indices, (-1) is the "colon" operator
+macro Iarr2(a,i,j)       fIarr(fii(i,j), a#DiM) //
+macro Iarr3(a,i,j,k)     fIarr(fii(i,j,k), a#DiM) //
+macro Iarr4(a,i,j,k,l)   fIarr(fii(i,j,k,l), a#DiM) //
+
+
+
+func int[int] Indlist(int[int] &ind, int i)
+{
+	int[int] redind;
+	if(ind(i)==(ind(i+1)-1))
+		redind=[redind, ind(i)];
+	else
+	{
+		redind.resize(ind(i+1)-ind(i));
+		int[int] temp(ind(i):(ind(i+1)-1));
+		redind=temp;
+	}
+
+	return redind;
+}
+
+func int numlist(int[int] &ind, int i)
+{
+	int n=(ind(i+1)-ind(i));
+	return n;
+}
+
+func int[int] fIarr(int i, int j, int n1, int n2)
+{
+//	cout << "Iarr" << endl;
+	if(i==-1)
+	{
+		if(j==-1)
+		{
+			int[int] ind=(0:(n1*n2-1));
+			return ind;
+		}
+		else
+		{
+			int[int] ind=((0+j*n1):((n1-1)+j*n1));
+			return ind;
+		}
+	}
+	else if(j==-1)
+	{
+		int[int] ind(n2);
+		for(int a=0;a<ind.n;++a)
+			ind(a)=i+a*n1;
+
+		return ind;
+	}
+	else
+	{
+		int[int] ind=[i+j*n1];
+		return ind;
+	}
+}
+
+
+func int[int] fIarr(int i, int j, int k, int n1, int n2, int n3)
+{
+	if(i==-1)
+	{
+		if(j==-1)
+		{
+			if(k==-1)
+			{
+				int[int] ind=(0:(n1*n2*n3-1));
+				return ind;
+			}
+			else
+			{
+				int[int] ind=((0+k*n1*n2):((n1*n2-1)+k*n1*n2));
+				return ind;
+			}
+		}
+		else
+		{
+			int[int] ind=((0+j*n1+k*n1*n2):((n1-1)+j*n1+k*n1*n2));
+			return ind;
+		}
+	}
+	else if(j==-1)
+	{
+		if(k==-1)
+		{
+			int[int] ind(n2*n3);
+			int s=0;
+			for(int a=0;a<n2;++a)
+				for(int b=0;b<n3;++b)
+				{
+					ind(s)=i+a*n1+b*n1*n2;
+					++s;
+				}
+			return ind;
+		}
+		else
+		{
+			int[int] ind(n2);
+			for(int a=0;a<ind.n;++a)
+				ind(a)=i+a*n1+k*n1*n2;
+
+			return ind;
+		}
+	}
+	else if(k==-1)
+	{
+		int[int] ind(n3);
+		for(int a=0;a<ind.n;++a)
+			ind(a)=i+j*n1+a*n1*n2;
+
+		return ind;
+	}else
+	{
+		int[int] ind=[i+j*n1+k*n1*n2];
+		return ind;
+	}
+}
+
+func int[int] fIarr(int i, int j, int k, int l, int n1, int n2, int n3, int n4)
+{
+	if(i==-1)
+	{
+		if(j==-1)
+		{
+			if(k==-1)
+			{
+				if(l==-1)
+				{
+					int[int] ind=(0:(n1*n2*n3*n4-1));
+					return ind;
+				}
+				else
+				{
+					int[int] ind=((0+l*n1*n2*n3):((n1*n2*n3-1)+k*n1*n2*n3));
+					return ind;
+				}
+			}
+			else
+			{
+				int[int] ind=((0+k*n1*n2+l*n1*n2*n3):((n1*n2-1)+k*n1*n2+l*n1*n2*n3));
+				return ind;
+			}
+		}
+		else
+		{
+			int[int] ind=((0+j*n1+k*n1*n2+l*n1*n2*n3):((n1-1)+j*n1+k*n1*n2+l*n1*n2*n3));
+			return ind;
+		}
+	}
+	else if(j==-1)
+	{
+		if(k==-1)
+		{
+			if(l==-1)
+			{
+				int[int] ind(n2*n3*n4);
+				int s=0;
+				for(int a=0;a<n2;++a)
+					for(int b=0;b<n3;++b)
+						for(int c=0;c<n4;++c)
+						{
+							ind(s)=i+a*n1+b*n1*n2+c*n1*n2*n3;
+							++s;
+						}
+				return ind;
+			}
+			else
+			{
+				int[int] ind(n2*n3);
+				int s=0;
+				for(int a=0;a<n2;++a)
+					for(int b=0;b<n3;++b)
+					{
+						ind(s)=i+a*n1+b*n1*n2+l*n1*n2*n3;
+						++s;
+					}
+				return ind;
+			}
+		}
+		else
+		{
+			int[int] ind(n2);
+			for(int a=0;a<ind.n;++a)
+				ind(a)=i+a*n1+k*n1*n2+l*n1*n2*n3;
+
+			return ind;
+		}
+	}
+	else if(k==-1)
+	{
+		if(l==-1)
+		{
+			int[int] ind(n3*n4);
+			int s=0;
+			for(int a=0;a<n3;++a)
+				for(int b=0;b<n4;++b)
+				{
+					ind(s)=i+j*n1+a*n1*n2+b*n1*n2*n3;
+					++s;
+				}
+			return ind;
+		}
+		else
+		{
+			int[int] ind(n3);
+			for(int a=0;a<ind.n;++a)
+				ind(a)=i+j*n1+a*n1*n2+l*n1*n2*n3;
+
+			return ind;
+		}
+	}else if(l==-1)
+	{
+		int[int] ind(n4);
+		for(int a=0;a<ind.n;++a)
+			ind(a)=i+j*n1+k*n1*n2+a*n1*n2*n3;
+
+		return ind;
+	}
+	else
+	{
+		int[int] ind=[i+j*n1+k*n1*n2+l*n1*n2*n3];
+		return ind;
+	}
+}
+
+func int[int] fIarr(int[int] &ii,int[int] &ad)
+{
+	if(ii.n==2)
+		return fIarr(ii(0),ii(1),ad(0),ad(1));
+	if(ii.n==3)
+		return fIarr(ii(0),ii(1),ii(2),ad(0),ad(1),ad(2));
+	if(ii.n==4)
+		return fIarr(ii(0),ii(1),ii(2),ii(3),ad(0),ad(1),ad(2),ad(3));
+
+	int[int] ind=[-1];
+	return ind;
+}

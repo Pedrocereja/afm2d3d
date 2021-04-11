@@ -1,0 +1,230 @@
+macro FETOOLSedp() //
+
+//macros to define "sub" finite element spaces with isovalues, mortar, Dirichlet condition, support (as Dirichlet condition and region function)
+
+macro FEspace(Th,fetype,form)
+/*creates an fespace of type "fetype" (P0, P1 or Edge ...) of form "form" (scal, vec ...), defined in MACROS2D or MACROS3D*/
+fespace Th#fetype#form(Th,[fetype#form]);
+// EOM FEspace
+
+macro SubFEspace(scaltype,Th,fetype,form,id)
+/*creates a sub-fepsace, that is a set of variables associated with a fepsace */
+/* that will store the information about Dirichlet, Iso, mortar and support conditions */
+/* with the identifier "id" */
+int[int][int] Th#fetype#form#id#inddir;
+int[int][int] Th#fetype#form#id#indiso;
+matrix<scaltype> Th#fetype#form#id#Mconnect;
+scaltype[int] Th#fetype#form#id#dirvalue(Th#fetype#form.ndof);
+scaltype[int] Th#fetype#form#id#dirflag(Th#fetype#form.ndof);
+Th#fetype#form#id#dirvalue(:)=0;
+//
+
+macro SetDirichletValue(scaltype,Th,fetype,form,id,tval)
+{
+	Th#fetype#form#id#dirvalue(:)=0;
+	for(int i=0;i<Th#fetype#form#id#inddir.n;++i)
+		{
+			scaltype[int] temp(Th#fetype#form#id#inddir[i].n);
+			temp=tval(Th#fetype#form#id#inddir[i]);
+			Th#fetype#form#id#dirvalue(Th#fetype#form#id#inddir[i])=temp;
+		}
+}
+//
+
+macro SetDirichletFlag(scaltype,Th,fetype,form,id)
+{
+	Th#fetype#form#id#dirflag(:)=0;
+	for(int i=0;i<Th#fetype#form#id#inddir.n;++i)
+		{
+			scaltype[int] temp(Th#fetype#form#id#inddir[i].n);
+			temp(:)=1;
+			Th#fetype#form#id#dirflag(Th#fetype#form#id#inddir[i])=temp;
+		}
+}
+//
+
+macro AddDirichlet(Th,fetype,form,id,dofflag)
+{
+	Th#fetype#form#id#inddir.resize(Th#fetype#form#id#inddir.n+1);
+	int[int] temp=NzIndex(dofflag);
+	Th#fetype#form#id#inddir[Th#fetype#form#id#inddir.n-1].resize(temp.n);
+	Th#fetype#form#id#inddir[Th#fetype#form#id#inddir.n-1] = temp;
+}
+//
+
+macro AddIso(Th,fetype,form,id,isoflag)
+{
+	Th#fetype#form#id#indiso = [Th#fetype#form#id#indiso, NzIndex(isoflag)];
+}
+//
+
+
+//macros to set region functions and check definition by ploting
+macro SetRegion(Th,I,bplot)
+Th#P0scal[int] reg#I(I.n);
+{
+Th#P0scal regall=region;
+int mir=regall[].max;
+for(int il=0;il<I.n;++il)
+{real[int] isI(mir+1);for(int i=0;i<I[il].n;++i) isI(I[il](i))=1; reg#I[il]=isI(region);}
+if(bplot) for(int i=0;i<reg#I.n;++i)
+{
+plot(reg#I[i],value=1,fill=1,wait=1,cmm="reg"+Stringification(I)+"("+i+")");
+Th#P1scal regP1=reg#I[i];
+plot(regP1,value=1,fill=1,wait=1,cmm="reg"+Stringification(I)+"("+i+") P1 interpolation");
+}
+}
+//
+
+
+//macros to plot boundary regions defined by a table of int
+macro PlotBoundary(Th,I,bplot)
+if(bplot)
+{
+varf vbnd(a,aa)=on(I,a=1);
+Th#P1scal bndI;
+bndI[]=vbnd(0,Th#P1scal);
+plot(bndI,value=1,fill=1,wait=1,cmm="boundary "+Stringification(I));
+}
+//
+
+macro FlagDofRegion(Th,fetype,form,I,coef,idflag)
+int[int] flagdofregion#idflag(Th#fetype#form.ndof);
+{
+	real[int] vcoef=coef;
+	flagdofregion#idflag(:)=0;
+	real tol=1e-9;
+	varf vvv([form#comp(a)],[form#comp(aa)])=intnd(Th,I)(form#compsumprod(a,aa,vcoef));
+	real[int] vcoef1(vcoef.n);
+	vcoef1(:)=1;
+	varf www([form#comp(a)],[form#comp(aa)])=intnd(Th)(form#compsumprod(a,aa,vcoef1));
+	matrix A=vvv(Th#fetype#form,Th#fetype#form);
+	matrix B=www(Th#fetype#form,Th#fetype#form);
+	real[int] diagofA(A.n),diagofB(A.n);
+	diagofA=A.diag;
+	diagofB=B.diag;
+	real th=diagofB.min*tol;
+	for(int i=0;i<A.n;++i)
+		if(diagofA(i)>th)
+		{
+			flagdofregion#idflag(i)=1;
+		}
+}
+//
+
+macro FlagDofBoundary(Th,fetype,form,I,coef,idflag)
+int[int] flagdofboundary#idflag(Th#fetype#form.ndof);
+{
+	real[int] vcoef=coef;
+	flagdofboundary#idflag(:)=0;
+	Th#fetype#form form(b);
+	form#firstcomp(b)[]=1;
+	varf vvv([form#comp(a)],[form#comp(aa)])=on(I,form#compdir(a,b,coef));
+	real[int] B=vvv(0,Th#fetype#form,tgv=1);
+	for(int i=0;i<B.n;++i) if(B(i)>0.5) {flagdofboundary#idflag(i)=1;}
+}
+//
+
+func int plotElementAtLocation(mesh &Th, real[int] &loc)
+{
+	fespace ThP0(Th, P0);
+	ThP0 iel,probeelement;
+	for(int i=0;i<iel[].n;++i)
+		iel[][i]=i;
+
+	// we may use Th(x,y).nuTriangle (in 2D) instead of iel
+
+	int err=0;
+
+	if(loc.n<2)
+	{
+		err=1;
+		cout << "error in file " << FILE << " at line " << LINE << endl;
+		assert(0);
+	}
+	else
+	{
+		probeelement[][iel(loc(0),loc(1))]=1;
+		plot(probeelement,wait=1,fill=1,value=1, cmm="element at location x="+loc(0)+", y="+loc(1));
+	}
+
+ 	return err;
+}
+
+func int plotElementAtLocation(mesh &Th, real[int,int] &loc)
+{
+	fespace ThP0(Th, P0);
+	ThP0 iel,probeelement;
+	for(int i=0;i<iel[].n;++i)
+		iel[][i]=i;
+
+	int err=0;
+	if(loc.m<2)
+		err=1;
+
+	if(err==0)
+	{
+		for(int i=0;i<loc.n;++i)
+		{
+			probeelement[][iel(loc(i,0),loc(i,1))]=1;
+			plot(probeelement,wait=1,fill=1,value=1,cmm="element at location x="+loc(i,0)+", y="+loc(i,1));
+		}
+	}
+	else
+	{
+		cout << "error in file " << FILE << " at line " << LINE << endl;
+		assert(0);
+	}
+	return err;
+}
+
+func int plotElementAtLocation(mesh3 &Th, real[int] &loc)
+{
+	fespace ThP0(Th, P0);
+	ThP0 iel,probeelement;
+	for(int i=0;i<iel[].n;++i)
+		iel[][i]=i;
+
+	int err=0;
+
+	if(loc.n<3)
+	{
+		err=1;
+		cout << "error in file " << FILE << " at line " << LINE << endl;
+		assert(0);
+	}
+	else
+	{
+		probeelement[][iel(loc(0),loc(1),loc(2))]=1;
+		plot(probeelement,wait=1,fill=1,value=1, cmm="element at location x="+loc(0)+", y="+loc(1)+", z="+loc(2));
+	}
+
+ 	return err;
+}
+
+func int plotElementAtLocation(mesh3 &Th, real[int,int] &loc)
+{
+	fespace ThP0(Th, P0);
+	ThP0 iel,probeelement;
+	for(int i=0;i<iel[].n;++i)
+		iel[][i]=i;
+
+	int err=0;
+	if(loc.m<3)
+		err=1;
+
+	if(err==0)
+	{
+		for(int i=0;i<loc.n;++i)
+		{
+			probeelement[][iel(loc(i,0),loc(i,1),loc(i,2))]=1;
+			plot(probeelement,wait=1,fill=1,value=1,cmm="element at location x="+loc(i,0)+", y="+loc(i,1)+", z="+loc(i,2));
+		}
+	}
+	else
+	{
+		cout << "error in file " << FILE << " at line " << LINE << endl;
+		assert(0);
+	}
+	return err;
+}

@@ -1,0 +1,85 @@
+mm = 1e-3;
+De = 0.47;			// Diâmetro externo
+re = 0.47/2.;		// Raio externo
+Di = 0.27;			// Diâmetro interno
+ri = 0.27/2;		// Raio Interno
+rm = (De+Di)/4; 	// Raio médio
+hest = (0.02/2); 	// Comprimento axial do estator considerando simetria
+hbob = 0.0044; 		// Comp. axial das bobinas
+hgap = 0.0015; 		// Comp. axial do entreferro
+hima = 0.0127; 		// Comp. axial dos imãs
+hrot = 0.02; 		// Comp. axial do rotor
+p = 14; 			// Pares de polos
+alfa = 0.72;
+theta = 360/14.;		// Ângulo do polo simulado
+Wcui = 0.0044;		// Espessura do enrolamento no raio interno
+Wcuo = 0.0032;		// Espessura do enrolamento no raio externo
+
+pg = 3*mm; // Densidade de malha no entreferro
+pfe = 6*mm; // Densidade de malha no ferro
+pim = 4*mm; // Densidade de malha no imã
+
+// Número de volumes
+ESTATOR = 5001;
+VPLUS = 5002;
+VMINUS = 5003;
+UPLUS = 5004;
+UMINUS = 5005;
+WPLUS = 5006;
+WMINUS = 5007;
+
+BOBAWM = 5015; // Parte do arco no raio interno Fase W-
+BOBAWP = 5016;  // Parte do arco no raio interno Fase W+
+BOBAUM = 5017;  // Parte do arco no raio interno Fase U-
+BOBAUP = 5018; // Parte do arco no raio interno Fase U+
+BOBAVM = 5019;  // Parte do arco no raio interno Fase V-
+BOBAVP = 5020;  // Parte do arco no raio interno Fase V+
+
+BOBWMF = 5021; // Parte da frente no raio interno Fase W- ao longo de Z
+BOBWPF = 5022; // Parte da frente no raio interno Fase W+ ao longo de Z
+BOBUMF = 5023; // Parte da frente no raio interno Fase U- ao longo de Z
+BOBUPF = 5024; // Parte da frente no raio interno Fase U+ ao longo de Z
+BOBVMF = 5025; // Parte da frente no raio interno Fase V- ao longo de Z
+BOBVPF = 5026; // Parte da frente no raio interno Fase V+ ao longo de Z
+
+BOBAVMAT = 5027; // Parte do arco no raio externo Fase V-
+BOBAUPAT = 5028; // Parte do arco no raio externo Fase U+
+BOBAWMAT = 5029; // Parte do arco no raio externo Fase W-
+BOBAVPAT = 5030; // Parte do arco no raio externo Fase V+
+BOBAUMAT = 5031; // Parte do arco no raio externo Fase U-
+BOBAWPAT = 5032; // Parte do arco no raio externo Fase W+
+
+BOBZVMAT = 5033; // Parte do trás no raio externo Fase V- ao longo de Z
+BOBZUPAT = 5034; // Parte do trás no raio externo Fase U+ ao longo de Z
+BOBZWMAT = 5035; // Parte do trás no raio externo Fase W+ ao longo de Z
+BOBZVPAT = 5036; // Parte do trás no raio externo Fase V+ ao longo de Z
+BOBZUMAT = 5037; // Parte do trás no raio externo Fase U- ao longo de Z
+BOBZWPAT = 5038; // Parte do trás no raio externo Fase W+ ao longo de Z
+
+ARARCRI = 8039;
+ARARCRE = 8040;
+AR1 = 8041;
+AR31 = 8042;
+AR32 = 8043;
+AR21 = 8044;
+AR22 = 8045;
+AR23 = 8046;
+
+IMA1 = 8047;
+IMA2 = 8048;
+
+ROTOR = 8049;
+
+FASEVM = 8050;
+FASEUP = 8051;
+FASEWM = 8052;
+FASEVP = 8053;
+FASEUM = 8054;
+FASEWP = 8055;
+
+LATDIR = 9001;
+LATESQ = 9002;
+PARSUP = 9003;
+PARINF = 9004;
+RAIOINT = 9005;
+RAIOEXT = 9006;

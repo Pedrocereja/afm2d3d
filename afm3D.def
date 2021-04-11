@@ -1,0 +1,86 @@
+real mm;
+real De;
+real re;
+real Di;
+real ri;
+real rm;
+real hest;
+real hbob;
+real hgap;
+real hima;
+real hrot;
+real p;
+real alfa;
+real theta;
+real Wcui;
+real Wcuo;
+real pg;
+real pfe;
+real pim;
+
+int ESTATOR;
+int VPLUS;
+int VMINUS;
+int UPLUS;
+int UMINUS;
+int WPLUS;
+int WMINUS;
+int GAP1;
+int GAP21;
+int GAP22;
+int GAP23;
+
+int BOBAWM;
+int BOBAWP;
+int BOBAUM;
+int BOBAUP;
+int BOBAVM;
+int BOBAVP;
+
+int BOBWMF;
+int BOBWPF;
+int BOBUMF;
+int BOBUPF;
+int BOBVMF;
+int BOBVPF;
+
+int BOBAVMAT;
+int BOBAUPAT;
+int BOBAWMAT;
+int BOBAVPAT;
+int BOBAUMAT;
+int BOBAWPAT;
+
+int BOBZVMAT;
+int BOBZUPAT;
+int BOBZWMAT;
+int BOBZVPAT;
+int BOBZUMAT;
+int BOBZWPAT;
+
+int ARARCRI;
+int ARARCRE;
+int AR1;
+int AR31;
+int AR32;
+int AR21;
+int AR22;
+int AR23;
+
+int IMA1;
+int IMA2;
+
+int ROTOR;
+int FASEVM;
+int FASEUP;
+int FASEWM;
+int FASEVP;
+int FASEUM;
+int FASEWP;
+
+int LATDIR;
+int LATESQ;
+int PARSUP;
+int PARINF;
+int RAIOINT;
+int RAIOEXT;

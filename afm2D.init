@@ -1,0 +1,48 @@
+mm = 1e-3;
+De = 0.47;			// Diâmetro externo
+Di = 0.27;			// Diâmetro interno
+rm = (De+Di)/4; 	// Raio médio
+hest = (0.02/2); 	// Comprimento axial do estator considerando simetria
+hbob = 0.0044; 		// Comp. axial das bobinas
+hgap = 0.0015; 		// Comp. axial do entreferro
+hima = 0.0127; 		// Comp. axial dos imãs
+hrot = 0.02; 		// Comp. axial do rotor
+p = 14; 			// Pares de polos
+alfa = 0.72;
+
+pg = 0.25*mm; // Densidade de malha no entreferro 0.24*mm
+pfe = 1*mm; // Densidade de malha no ferro 1*mm
+pim = 1*mm; // Densidade de malha no imã 1*mm
+
+// Número de regiões físicas
+ESTATOR = 5001;
+VPLUS = 5002;
+VMINUS = 5003;
+UPLUS = 5004;
+UMINUS = 5005;
+WPLUS = 5006;
+WMINUS = 5007;
+GAP1 = 5008;
+GAP21 = 5009;
+GAP22 = 5010;
+GAP23 = 5011;
+IMA1 = 5012;
+IMA2 = 5013;
+ROTOR = 5014;
+CAMSAR = 5015;
+
+ESTATORL2 = 6001;
+ESTATORL3 = 6002;
+WML16 = 6003;
+VPL10 = 6004;
+GAP1L23 = 6005;
+GAP1L24 = 6006;
+GAP23L35 = 6007;
+GAP21L30 = 6008;
+ROTORL41 = 6009;
+ROTORL42 = 6010;
+ROTORL43 = 6011;
+ESTATORL1 = 6012;
+CAMSARLE = 6013;
+CAMSARS = 6014;
+CAMSARLD = 6015;

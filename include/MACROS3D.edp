@@ -1,0 +1,131 @@
+macro MACROS3Dedp()//
+
+macro ProblemDimension()3 //
+/*int ProblemDimension=3;*/
+
+macro intnd() int3d //
+macro meshnd() mesh3 //
+
+macro vecff(a,b,c) [a,b,c]//
+macro matdiagff(a,b,c) [[a,0,0],[0,b,0],[0,0,c]]//
+macro plotveccomp(a,txt)
+plot(a#x,wait=1,fill=1,value=1,cmm=Stringification(a)+"x : "+txt);
+plot(a#y,wait=1,fill=1,value=1,cmm=Stringification(a)+"y : "+txt);
+plot(a#z,wait=1,fill=1,value=1,cmm=Stringification(a)+"z : "+txt);
+//
+macro plotveccomp2(a,b,txt)
+plot(a#x,b#x,wait=1,fill=1,value=1,cmm=Stringification(a)+"x : "+txt);
+plot(a#y,b#y,wait=1,fill=1,value=1,cmm=Stringification(a)+"y : "+txt);
+plot(a#z,b#z,wait=1,fill=1,value=1,cmm=Stringification(a)+"z : "+txt);
+//
+
+macro tens22compi(A,i) A#xxxx#i,A#yyyy#i,A#zzzz#i,A#yzyz#i,A#xzxz#i,A#xyxy#i,A#xzxy#i,A#yzxy#i,A#zzxy#i,A#yyxy#i,A#xxxy#i,A#xxxz#i,A#yyxz#i,A#zzxz#i,A#yzxz#i,A#zzyz#i,A#yyyz#i,A#xxyz#i,A#xxzz#i,A#yyzz#i,A#xxyy#i //
+macro tens22comp(A) tens22compi(A,) //
+macro tens22(A) [tens22comp(A)] //
+
+macro tens2compi(A,i) A#xx#i,A#yy#i,A#zz#i,A#yz#i,A#xz#i,A#xy#i //
+macro tens2comp(A) tens2compi(A,) //
+macro tens2(A) [tens2comp(A)] //
+
+/* vector fields can be used for FE spaces with one dof per component or one dof per vector element (e.g. edge elements)*/
+/* in the case of edge element for example "coef" must have the same value (0 or 1) for all components */
+macro veccompi(A,i) A#x#i,A#y#i,A#z#i //
+macro veccomp(A) veccompi(A,) //
+macro vec(A) [veccomp(A)] //
+macro vecdir(A,B) A#x=B#x,A#y=B#y,A#z=B#z //
+macro veccompdir(A,B,coef) A#x=coef(0)*B#x,A#y=coef(0)*B#y,A#z=coef(0)*B#z //
+macro veccompsum(A) A#x + A#y + A#z //
+macro veccompsumprod(A,B,coef) coef(0)*A#x*B#x + coef(1)*A#y*B#y + coef(2)*A#z*B#z//
+macro vecfirstcomp(A) A#x //
+
+macro scalcomp(A) A //
+macro scal(A) [scalcomp(A)] //
+macro scalcompdir(A,B,coef) A=coef(0)*B //
+macro scalcompsum(A) A //
+macro scalcompsumprod(A,B,coef) coef(0)*A*B //
+macro scalfirstcomp(A) A //
+
+macro scalscalcomp(A) A#a,A#b //
+macro scalscal(A) [scalscalcomp(A)] //
+macro scalscalcompdir(A,B,coef) A#a=coef(0)*B#a,A#b=coef(1)*B#b //
+macro scalscalcompsumprod(A,B,coef) coef(0)*A#a*B#a + coef(1)*A#b*B#b//
+macro scalscalfirstcomp(A) A#a //
+macro scalscalcomp0(A) A#a //
+macro scalscalcomp1(A) A#b //
+
+macro P0scal() P0		//
+macro P1scal() P1		//
+
+macro P0vec() P0,P0,P0		//
+macro P1vec() P1,P1,P1		//
+
+macro P0tens2() P0,P0,P0,P0,P0,P0		//
+macro P0tens22() P0,P0,P0,P0,P0,P0,P0,P0,P0,P0,P0,P0,P0,P0,P0,P0,P0,P0,P0,P0,P0	//
+
+macro P1P1scalscal() P1,P1		//
+
+macro Edgevec() Edge03d	//
+
+macro fetype1vec1() Edgevec //
+macro vec1comp(A) veccomp(A) //
+macro vec1(A) vec(A)//
+macro vec1compdir(A,B,coef) veccompdir(A,B,coef) //
+macro vec1compsum(A) veccompsum(A) //
+macro vec1compsumprod(A,B,coef) veccompsumprod(A,B,coef) //
+macro vec1firstcomp(A) vecfirstcomp(A)//
+
+macro P0vec1() P0vec		//
+
+macro vec2(A) vec(A)//
+macro P0vec2() P0vec	//
+
+
+macro norm(A) sqrt(A#x^2+A#y^2+A#z^2) //
+macro rot(A) [dy(A#z)-dz(A#y),dz(A#x)-dx(A#z),dx(A#y)-dy(A#x)] //
+macro grad(a) [dx(a),dy(a),dz(a)] //
+macro NX(A) [N.y*A#z-N.z*A#y,N.z*A#x-N.x*A#z,N.x*A#y-N.y*A#x] //
+macro grads(u)  [dx(u#x),dy(u#y),dz(u#z),0.5*(dy(u#z)+dz(u#y)),0.5*(dx(u#z)+dz(u#x)),0.5*(dx(u#y)+dy(u#x)) ] //
+
+macro rot2(A) rot(A) //
+macro rot1(A) rot(A) //
+
+macro Mtens2(m)  [[m#xx, m#xy, m#xz ],
+                  [m#xy, m#yy, m#yz ],
+                  [m#xz, m#yz, m#zz ]]//
+
+macro IsotropicStiffnessLame(C,lambda,mu) [tens22comp(C)]=[(lambda+2*mu),(lambda+2*mu),(lambda+2*mu),2*mu,2*mu,2*mu,0,0,0,0,0,0,0,0,0,0,0,0,lambda,lambda,lambda]//
+
+macro Mtens22(C) [[C#xxxx,C#xxyy,C#xxzz,       0,       0,       0],
+                 [ C#xxyy,C#yyyy,C#yyzz,       0,       0,       0],
+                 [ C#xxzz,C#yyzz,C#zzzz,       0,       0,       0],
+                 [      0,     0,     0,2*C#yzyz,       0,       0],
+                 [      0,     0,     0,       0,2*C#xzxz,       0],
+                 [      0,     0,     0,       0,       0,2*C#xyxy]] //
+
+macro T22T2(C,T) [ C#xxxx*T#xx + C#xxyy*T#yy + C#xxzz*T#zz,
+		               C#xxyy*T#xx + C#yyyy*T#yy + C#yyzz*T#zz,
+                   C#xxzz*T#xx + C#yyzz*T#yy + C#zzzz*T#zz,
+                   2*C#yzyz*T#yz,
+                   2*C#xzxz*T#xz,
+                   2*C#xyxy*T#xy] //
+
+macro T22grads(C,u) [ C#xxxx*dx(u#x) + C#xxyy*dy(u#y) + C#xxzz*dz(u#z),
+                      C#xxyy*dx(u#x) + C#yyyy*dy(u#y) + C#yyzz*dz(u#z),
+                      C#xxzz*dx(u#x) + C#yyzz*dy(u#y) + C#zzzz*dz(u#z),
+                      C#yzyz*(dy(u#z)+dz(u#y)),
+                      C#xzxz*(dx(u#z)+dz(u#x)),
+                      C#xyxy*(dx(u#y)+dy(u#x))] //
+
+macro T2T22T2(U,C,T)  ([ U#xx, U#yy, U#zz, 2*U#yz, 2*U#xz, 2*U#xy]'*T22T2(C,T))//
+
+macro T2T22grads(U,C,u) ([ U#xx, U#yy, U#zz, 2*U#yz, 2*U#xz, 2*U#xy]'*T22grads(C,u))//
+
+macro gradsT22grads(uu,C,u) ([ dx(uu#x),dy(uu#y),dz(uu#z),(dy(uu#z)+dz(uu#y)),(dx(uu#z)+dz(uu#x)),(dx(uu#y)+dy(uu#x))]'*T22grads(C,u))//
+
+macro T2T2(U,T)  ([ U#xx, U#yy, U#zz, 2*U#yz, 2*U#xz, 2*U#xy]'*tens2(T))//
+
+macro T2grads(U,u)  ([ U#xx, U#yy, U#zz, 2*U#yz, 2*U#xz, 2*U#xy]'*grads(u))//
+
+macro T2T1(T,v)  ([ T#xx*v#x+T#xy*v#y+T#xz*v#z, T#xy*v#x+T#yy*v#y+T#yz*v#z,T#xz*v#x+T#yz*v#y+T#zz*v#z])//
+
+macro T2inbasis(T,u,v,w)  [vec(u)'*T2T1(T,u),vec(v)'*T2T1(T,v),vec(w)'*T2T1(T,w),vec(v)'*T2T1(T,w),vec(u)'*T2T1(T,w),vec(u)'*T2T1(T,v)]//

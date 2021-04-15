@@ -7,7 +7,7 @@ load "iovtk"
 load "medit"
 load "msh3"
 
-macro DIM 2 // /* 2=2D , 3=3D */
+macro DIM 3 // /* 2=2D , 3=3D */
 
 bool bcheckboundaries=false; // set to "true" to check the boundary regions
 bool bplotregion=false; // set to "true" to plot the physical regions
@@ -36,7 +36,7 @@ real nucoil = 1./mucoil; // coil reluctivity
 IFMACRO(DIM,2)
 include "afm2D.def"
 include "afm2D.init"
-include "include/MACROS2D.edp"
+include "MACROS2D.edp"
 // directory where the results should be saved
 string DIRres="results/2D/";
 
@@ -131,12 +131,26 @@ ENDIFMACRO
 IFMACRO(DIM,3)
 include "afm3D.def"
 include "afm3D.init"
-include "include/MACROS3D.edp"
+include "MACROS3D.edp"
 // directory where the results should be saved
 string DIRres="results/3D/";
 
 mesh3 Th = gmshload3("afm3Dv2.msh");
 plot(Th,wait=1);
+
+mesh Th2 = gmshload("afm2D2.msh");
+plot(Th2,wait=1);
+
+meshS Th23d = movemesh23(Th2, transfo=[x,y,0]);
+
+
+real ppi = 3.14;
+real tr = 2*(ppi*rm)/p;			// Comprimento do rotor no qual está colado o imã
+meshS Th23 = movemesh23(Th2, transfo=[0,x-tr/2,y]);
+Th23 = movemeshS(Th23, transfo=[-rm*sin(y/rm),rm*cos(y/rm),z]);
+plot(Th23,wait=1);
+plot(Th2,Th23,Th,wait=1);
+
 
 bool bplanestress=0;//false for 3D case
 
@@ -419,6 +433,7 @@ RedSysDirichlet(real, AArest, BBrest, intrestdir, intrestdir, restdirvalue)
 
 real[int] solper1(BBrestred.n);
 set(AArestred,solver=CG);
+//set(AArestred,solver=UMFPACK);
 
 cout << " end build restricted (iso and periodicity) and reduced (Dirichlet and support) system" << endl;
 
@@ -442,6 +457,7 @@ cout <<"span restricted and reduced system solution to original system" << endl;
 RedSysDirichlet(real, AA, BB, Thfetype1vec1magstatdirflag, Thfetype1vec1magstatdirflag, Thfetype1vec1magstatdirvalue)
 real[int] xx(AAred.n);
 set(AAred,solver=CG);
+//set(AAred,solver=UMFPACK);
 xx=AAred^-1*BBred; //resolution of the reduced system
 vec1firstcomp(a)[]=xx(AAspandof); // span the solution to the original system (be careful, the Dirichlet dofs are assigned the value of xx(0))
 
@@ -485,26 +501,8 @@ savevtk(DIRres+"Br.vtu",Th,vec(Br),order=order0,dataname="br");
 savevtk(DIRres+"M.vtu",Th,vec2(m),order=order0,dataname="m");
 savevtk(DIRres+"H.vtu",Th,vec2(h),order=order0,dataname="h");
 
-/*
-mesh Th2 = gmshload("afm2D.msh");
-plot(Th2,wait=1);
 
-real ppi = 3.14;
-real tr = 2*(ppi*rm)/p;			// Comprimento do rotor no qual está colado o imã
-meshS Th23 = movemesh23(Th2, transfo=[0,x-tr/2,y]);
-Th23 = movemeshS(Th23, transfo=[-rm*sin(y/rm),rm*cos(y/rm),z]);
-plot(Th23,wait=1);
-plot(Th23,Th,wait=1);
 
-FEspace(Th23,P0,vec);
-Th23P0vec vec(b3)=vec(b);
-savevtk(DIRres+"B3.vtu",Th23,vec(b3),order=order0,dataname="b3");
-
-FEspace(Th2,P0,vec);
-Th2P0vec vec(b32);
-b32x[]=b3x[];
-savevtk(DIRres+"B32.vtu",Th2,[-b32x,b32z,b32y],order=order0,dataname="b32");
-*/
 ENDIFMACRO
 
 IFMACRO(DIM,2)
@@ -608,10 +606,11 @@ IFMACRO(DIM,3)
 
 ENDIFMACRO
 
+
+IFMACRO(DIM,2)
 varf nodesurface(vec(u),vec(uu)) =  intnd(Th)(uux+uuy);
 ThP1vec vec(nodesurf);
 nodesurfx[]=nodesurface(0,ThP1vec);
-
 macro forcnod(rotor,magnet,t0)
 varf forcemag(vec(u),vec(uu)) =  intnd(Th)(-T2grads(tm2,uu));
 ThP1vec vec(forct);
@@ -621,8 +620,53 @@ savevtk(DIRres+"nodesurf"+Stringification(t0)+".vtu",Th#rotor#magnet,[nodesurfx,
 forctx[]./=nodesurfx[];
 savevtk(DIRres+"densforc"+Stringification(t0)+".vtu",Th#rotor#magnet,[forctx,forcty,0],order=order1,dataname=Stringification(denst0));
 //
+ENDIFMACRO
+
+IFMACRO(DIM,3)
+macro R sqrt(x*x+y*y) //
+
+varf nodevol(vec(u),vec(uu)) =  intnd(Th)(uux+uuy+uuz);
+ThP1vec vec(nodevol);
+nodevolx[]=nodevol(0,ThP1vec);
+
+macro forcnod(rotor,magnet,t0)
+varf forcemag(vec(u),vec(uu)) =  intnd(Th)(-T2grads(tm2,uu));
+ThP1vec vec(forct);
+forctx[]=forcemag(0,ThP1vec);
+savevtk(DIRres+"forc"+Stringification(t0)+".vtu",Th#rotor#magnet,[forctx,forcty,forctz],order=order1,dataname=Stringification(t0));
+savevtk(DIRres+"nodevol"+Stringification(t0)+".vtu",Th#rotor#magnet,[nodevolx,nodevoly,nodevolz],order=order1,dataname=Stringification(nodevol));
+forctx[]./=nodevolx[];
+savevtk(DIRres+"densforc"+Stringification(t0)+".vtu",Th#rotor#magnet,[forctx,forcty,forctz],order=order1,dataname=Stringification(denst0));
+
+FEspace(Th23,P0,vec);
+Th23P0vec vec(b3)=vec(b),vec(b3cyl);
+savevtk(DIRres+"B3.vtu",Th23,vec(b3),order=order0,dataname="b3");
+
+Th23P0vec vec(ur),vec(ut),vec(uz);
+vec(ur)=[x/R,y/R,0];
+vec(ut)=[-y/R,x/R,0];
+vec(uz)=[0,0,1];
+
+vec(b3cyl)=[vec(-b3)'*vec(ut),vec(-b3)'*vec(uz),vec(b3)'*vec(ur)]; /*manual sign change*/
+FEspace(Th23d,P0,vec);
+Th23dP0vec vec(b23d);
+b23dx[]=b3cylx[];
+savevtk(DIRres+"B23d.vtu",Th23d,[b23dx,b23dy,b23dz],order=order0,dataname="b23d");
+
+Th23P0vec vec(f3)=vec(forct),vec(f3cyl);
+savevtk(DIRres+"f3.vtu",Th23,vec(f3),order=order0,dataname="f3");
+
+vec(f3cyl)=[vec(-f3)'*vec(ut),vec(-f3)'*vec(uz),vec(f3)'*vec(ur)]; /*manual sign change*/
+Th23dP0vec vec(f23d);
+f23dx[]=f3cylx[];
+savevtk(DIRres+"f23d.vtu",Th23d,[f23dx,f23dy,f23dz],order=order0,dataname="f23d");
+
+//
+ENDIFMACRO
 
 forcnod(,,tm2); // Choose between (rotor,magnet) or (stator,coil)
+
+
 
 //
 //int ncomp = (forctx.n/3);

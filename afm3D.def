@@ -17,6 +17,9 @@ real Wcuo;
 real pg;
 real pfe;
 real pim;
+int pair;
+real riair;
+real zair;
 
 int ESTATOR;
 int VPLUS;
@@ -84,3 +87,8 @@ int PARSUP;
 int PARINF;
 int RAIOINT;
 int RAIOEXT;
+
+int ARINF;
+int ARSUP;
+int ARRI1;
+int ARRE1;

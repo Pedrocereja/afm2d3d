@@ -99,8 +99,8 @@ ln1[] += newl; Line(newl) = {p1[29],p1[28]};
 
 // Pontos de ar acima do rotor
 
-p1[] += newp; Point(newp) = {0,hest+3*hbob+hgap+hima+hrot,0,pfe};
-p1[] += newp; Point(newp) = {tr,hest+3*hbob+hgap+hima+hrot,0,pfe};
+p1[] += newp; Point(newp) = {0,hest+hbob+hgap+hima+hrot+zair,0,pair};
+p1[] += newp; Point(newp) = {tr,hest+hbob+hgap+hima+hrot+zair,0,pair};
 
 ln1[] += newl; Line(newl) = {p1[28],p1[30]};
 ln1[] += newl; Line(newl) = {p1[30],p1[31]};
@@ -180,7 +180,7 @@ Physical Line("Gap23L35", GAP23L35) = ln1[34];
 Physical Line("Gap21L30", GAP21L30) = ln1[29];
 Physical Line("RotorL41", ROTORL41) = ln1[40];
 Physical Line("RotorL42", ROTORL42) = ln1[41];
-//Physical Line("RotorL43", ROTORL43) = ln1[42];
+Physical Line("RotorL43", ROTORL43) = ln1[42];
 Physical Line("CamSArLe", CAMSARLE) = ln1[43];
 Physical Line("CamSArS", CAMSARS) = ln1[44];
 Physical Line("CamSArLd", CAMSARLD) = ln1[45];

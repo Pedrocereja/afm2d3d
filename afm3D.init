@@ -15,9 +15,12 @@ theta = 360/14.;		// Ângulo do polo simulado
 Wcui = 0.0044;		// Espessura do enrolamento no raio interno
 Wcuo = 0.0032;		// Espessura do enrolamento no raio externo
 
-pg = 3*mm; // Densidade de malha no entreferro
-pfe = 6*mm; // Densidade de malha no ferro
-pim = 4*mm; // Densidade de malha no imã
+pg = 2*mm; // Densidade de malha no entreferro antes 2mm
+pfe = 2*mm; // Densidade de malha no ferro antes 2mm
+pim = 2*mm; // Densidade de malha no imã antes 2mm
+pair = 10*mm; // Densidade das camadas de ar
+riair = 0.05; // Espessura do raio interno
+zair = 0.04;
 
 // Número de volumes
 ESTATOR = 5001;
@@ -26,7 +29,7 @@ VMINUS = 5003;
 UPLUS = 5004;
 UMINUS = 5005;
 WPLUS = 5006;
-WMINUS = 5007;
+WMINUS = 5007; 
 
 BOBAWM = 5015; // Parte do arco no raio interno Fase W-
 BOBAWP = 5016;  // Parte do arco no raio interno Fase W+
@@ -83,3 +86,8 @@ PARSUP = 9003;
 PARINF = 9004;
 RAIOINT = 9005;
 RAIOEXT = 9006;
+
+ARINF = 9100;
+ARSUP = 9101;
+ARRI1 = 9102;
+ARRE1 = 9103;

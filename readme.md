@@ -1,0 +1,1 @@
+Os caminhos para a pasta include estão realativos a uma pasta externa ao diretório de download ("../include/"). Portanto, após clonar o repositório, é preciso mover a pasta include para fora da pasta afm2d3d.

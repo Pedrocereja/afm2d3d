@@ -34,250 +34,248 @@ real mucoil = mu0; // coil permeability
 real nucoil = 1./mucoil; // coil reluctivity
 
 IFMACRO(DIM,2)
-include "afm2D.def"
-include "afm2D.init"
-include "../include/MACROS2D.edp"
-// directory where the results should be saved
-string DIRres="results/2D/";
+	include "afm2D.def"
+	include "afm2D.init"
+	include "../include/MACROS2D.edp"
+	// directory where the results should be saved
+	string DIRres="results/2D/";
 
-mesh Th = gmshload("afm2D2.msh");
-plot(Th,wait=1);
+	mesh Th = gmshload("afm2D2.msh");
+	plot(Th,wait=1);
 
-bool bplanestress=0;// true if plane stress, false if plane strain
+	bool bplanestress=0;// true if plane stress, false if plane strain
 
-mesh Thper=movemesh(Th,[x+2*(3.14*rm)/p,y]); // Malha perpendicular à original (lado direito)
-plot(Th,Thper,wait=1);
+	mesh Thper=movemesh(Th,[x+2*(3.14*rm)/p,y]); // Malha perpendicular à original (lado direito)
+	plot(Th,Thper,wait=1);
 
-real[string] signcurrent;
-signcurrent["plus"]=1;
-signcurrent["minus"]=-1;
+	real[string] signcurrent;
+	signcurrent["plus"]=1;
+	signcurrent["minus"]=-1;
 
-macro currentdensity(A,plus,bplot)
-/* macro currentdensity(A,plus,bplot) compute current density field for phase "A plus"*/
-ThP0vec1 J#plus#A;
-{
-real surf=int2d(Th,phase#plus#[A])(1);
-J#plus#A=regphase#plus#[A]*signcurrent[Stringification(plus)]/surf;
-/*J#plus#A=regphase#plus#[A]*signcurrent[Stringification(plus)];*/
-if(bplot) plot(J#plus#A,wait=1,fill=1,value=1,cmm="J"+Stringification(plus)+Stringification(A)+" (A/m2)");
-}
+	macro currentdensity(A,plus,bplot)
+	/* macro currentdensity(A,plus,bplot) compute current density field for phase "A plus"*/
+	ThP0vec1 J#plus#A;
+	{
+	real surf=int2d(Th,phase#plus#[A])(1);
+	J#plus#A=regphase#plus#[A]*signcurrent[Stringification(plus)]/surf;
+	/*J#plus#A=regphase#plus#[A]*signcurrent[Stringification(plus)];*/
+	if(bplot) plot(J#plus#A,wait=1,fill=1,value=1,cmm="J"+Stringification(plus)+Stringification(A)+" (A/m2)");
+	}
 
-// surface regions
-int nbnd=4;
-int[int][int] bnd(nbnd);
-string[int] bndname(nbnd);
-int ibnd=0;
-//symmetry plane (mid plane of the stator, perpendicular to the axis of the machine)
-bnd[ibnd] = [ESTATORL1];
-bndname[ibnd]="szmin";
-// external plane boundary pependicular to the machine axis
-ibnd++;
-bnd[ibnd] = [CAMSARS];
-//bnd[ibnd] = [ROTORL43];
-bndname[ibnd]="szmax";
-// periodicity planes (parallel to and containing the axis of the machine)
-ibnd++;
-bnd[ibnd] = [ESTATORL2,WML16,GAP1L23,GAP23L35,ROTORL41,CAMSARLD];
-//bnd[ibnd] = [ESTATORL2,WML16,GAP1L23,GAP23L35,ROTORL41];
-bndname[ibnd]="sperio1";
-ibnd++;
-bnd[ibnd] = [ESTATORL3,VPL10,GAP1L24,GAP21L30,ROTORL42,CAMSARLE];
-//bnd[ibnd] = [ESTATORL3,VPL10,GAP1L24,GAP21L30,ROTORL42];
-bndname[ibnd]="sperio2";
+	// surface regions
+	int nbnd=4;
+	int[int][int] bnd(nbnd);
+	string[int] bndname(nbnd);
+	int ibnd=0;
+	//symmetry plane (mid plane of the stator, perpendicular to the axis of the machine)
+	bnd[ibnd] = [ESTATORL1];
+	bndname[ibnd]="szmin";
+	// external plane boundary pependicular to the machine axis
+	ibnd++;
+	bnd[ibnd] = [CAMSARS];
+	//bnd[ibnd] = [ROTORL43];
+	bndname[ibnd]="szmax";
+	// periodicity planes (parallel to and containing the axis of the machine)
+	ibnd++;
+	bnd[ibnd] = [ESTATORL2,WML16,GAP1L23,GAP23L35,ROTORL41,CAMSARLD];
+	//bnd[ibnd] = [ESTATORL2,WML16,GAP1L23,GAP23L35,ROTORL41];
+	bndname[ibnd]="sperio1";
+	ibnd++;
+	bnd[ibnd] = [ESTATORL3,VPL10,GAP1L24,GAP21L30,ROTORL42,CAMSARLE];
+	//bnd[ibnd] = [ESTATORL3,VPL10,GAP1L24,GAP21L30,ROTORL42];
+	bndname[ibnd]="sperio2";
 
-int[string] ibndname; //to get the boundary index by name
-for(int i=0;i<nbnd;++i) ibndname[bndname[i]]=i;
+	int[string] ibndname; //to get the boundary index by name
+	for(int i=0;i<nbnd;++i) ibndname[bndname[i]]=i;
 
-// boundary Dirichlet
-int[int] sBn0 = [bnd[ibndname["szmin"]]];
-sBn0=[sBn0,bnd[ibndname["szmax"]]];
+	// boundary Dirichlet
+	int[int] sBn0 = [bnd[ibndname["szmin"]]];
+	sBn0=[sBn0,bnd[ibndname["szmax"]]];
 
-//volume regions
-int[int][int] rotor(1), magnet(2),stator(1),air(1);
-rotor[0]=[ROTOR];
-magnet[0]=[IMA1];magnet[1]=[IMA2];
-stator[0]=[ESTATOR];
+	//volume regions
+	int[int][int] rotor(1), magnet(2),stator(1),air(1);
+	rotor[0]=[ROTOR];
+	magnet[0]=[IMA1];magnet[1]=[IMA2];
+	stator[0]=[ESTATOR];
 
-air[0]=[GAP1,GAP21,GAP22,GAP23,CAMSAR]; //2D mesh
-//air[0]=[GAP1,GAP21,GAP22,GAP23]; //2D mesh
+	air[0]=[GAP1,GAP21,GAP22,GAP23,CAMSAR]; //2D mesh
+	//air[0]=[GAP1,GAP21,GAP22,GAP23]; //2D mesh
 
-int[int][int] phaseplus(3),coil(6);
-//phaseplus[0]=[UPLUS];
-//phaseplus[1]=[VPLUS];
-//phaseplus[2]=[WPLUS];
-phaseplus[0]=[UPLUS];
-phaseplus[1]=[VPLUS];
-phaseplus[2]=[WPLUS];
+	int[int][int] phaseplus(3),coil(6);
+	//phaseplus[0]=[UPLUS];
+	//phaseplus[1]=[VPLUS];
+	//phaseplus[2]=[WPLUS];
+	phaseplus[0]=[UPLUS];
+	phaseplus[1]=[VPLUS];
+	phaseplus[2]=[WPLUS];
 
-int[int][int] phaseminus(3);
-//phaseminus[0]=[UMINUS];
-//phaseminus[1]=[VMINUS];
-//phaseminus[2]=[WMINUS];
-phaseminus[0]=[UMINUS];
-phaseminus[1]=[VMINUS];
-phaseminus[2]=[WMINUS];
+	int[int][int] phaseminus(3);
+	//phaseminus[0]=[UMINUS];
+	//phaseminus[1]=[VMINUS];
+	//phaseminus[2]=[WMINUS];
+	phaseminus[0]=[UMINUS];
+	phaseminus[1]=[VMINUS];
+	phaseminus[2]=[WMINUS];
 
-coil[0]=[UPLUS];
-coil[1]=[VPLUS];
-coil[2]=[WPLUS];
-coil[3]=[UMINUS];
-coil[4]=[VMINUS];
-coil[5]=[WMINUS];
+	coil[0]=[UPLUS];
+	coil[1]=[VPLUS];
+	coil[2]=[WPLUS];
+	coil[3]=[UMINUS];
+	coil[4]=[VMINUS];
+	coil[5]=[WMINUS];
 
-macro vecBr [0,Br*(regmagnet[0]-regmagnet[1])] //
+	macro vecBr [0,Br*(regmagnet[0]-regmagnet[1])] //
 
 ENDIFMACRO
 
 IFMACRO(DIM,3)
-include "afm3D.def"
-include "afm3D.init"
-include "../include/MACROS3D.edp"
-// directory where the results should be saved
-string DIRres="results/3D/";
+	include "afm3D.def"
+	include "afm3D.init"
+	include "../include/MACROS3D.edp"
+	// directory where the results should be saved
+	string DIRres="results/3D/";
 
-mesh3 Th = gmshload3("afm3Dv2.msh");
-plot(Th,wait=1);
+	mesh3 Th = gmshload3("afm3Dv2.msh");
+	plot(Th,wait=1);
 
-mesh Th2 = gmshload("afm2D2.msh");
-plot(Th2,wait=1);
+	mesh Th2 = gmshload("afm2D2.msh");
+	plot(Th2,wait=1);
 
-meshS Th23d = movemesh23(Th2, transfo=[x,y,0]);
-
-
-real ppi = 3.14;
-real tr = 2*(ppi*rm)/p;			// Comprimento do rotor no qual está colado o imã
-meshS Th23 = movemesh23(Th2, transfo=[0,x-tr/2,y]);
-Th23 = movemeshS(Th23, transfo=[-rm*sin(y/rm),rm*cos(y/rm),z]);
-plot(Th23,wait=1);
-plot(Th2,Th23,Th,wait=1);
+	meshS Th23d = movemesh23(Th2, transfo=[x,y,0]);
 
 
-bool bplanestress=0;//false for 3D case
+	real ppi = 3.14;
+	real tr = 2*(ppi*rm)/p;			// Comprimento do rotor no qual está colado o imã
+	meshS Th23 = movemesh23(Th2, transfo=[0,x-tr/2,y]);
+	Th23 = movemeshS(Th23, transfo=[-rm*sin(y/rm),rm*cos(y/rm),z]);
+	plot(Th23,wait=1);
+	plot(Th2,Th23,Th,wait=1);
 
-real angle=pi/7;
-mesh3 Thper=movemesh(Th,[cos(angle)*x-sin(angle)*y,sin(angle)*x+cos(angle)*y,z]);
-plot(Th,Thper,wait=1);
 
-macro currentdensity(A,plus,bplot)
-/* macro currentdensity(A,plus,bplot) compute current density field for phase "A plus"*/
-ThP0vec1 vec(J#plus#A);
-{
-mesh3 Thtrunc = trunc(Th,reg#phase#plus[A]>0.5);
-if(bplot) plot(Thtrunc,wait=1,cmm="mesh for current density phase "+Stringification(A)+Stringification(plus));
-fespace ThtruncP1scal(Thtrunc,P1);
-ThtruncP1scal v, vv;
-solve laplace(v,vv)=int3d(Thtrunc)(grad(v)'*grad(vv))
- + on(bnd[ibndname["sphase"+Stringification(plus)+"in"+Stringification(A)]],v=0)
- + on(bnd[ibndname["sphase"+Stringification(plus)+"out"+Stringification(A)]],v=1);
-vec(J#plus#A)=[reg#phase#plus[A]*dx(v),reg#phase#plus[A]*dy(v),reg#phase#plus[A]*dz(v)];
-varf vonin(v,vv)=on(bnd[ibndname["sphase"+Stringification(plus)+"out"+Stringification(A)]],v=1);
-ThtruncP1scal onin;
-onin[]=vonin(0,ThtruncP1scal,tgv=1);
-real I=int3d(Thtrunc)(vec(J#plus#A)'*[dx(onin),dy(onin),dz(onin)]); /*compute total current in*/
-J#plus#A#x[]=J#plus#A#x[]/I; /*nomalized current density*/
-savevtk(DIRres+"J"+Stringification(plus)+Stringification(A)+".vtu",Th,vec(J#plus#A),order=order0,dataname="J"+Stringification(plus)+Stringification(A));
-fespace ThtruncP0vec(Thtrunc,[P0,P0,P0]);
-ThtruncP0vec vec(jj);
-vec(jj)=vec(J#plus#A);
-savevtk(DIRres+"jj"+Stringification(plus)+Stringification(A)+".vtu",Thtrunc,vec(jj),order=order0,dataname="jj"+Stringification(plus)+Stringification(A));
-}
-// EOM
-// surface regions
-int nbnd=18;
-int[int][int] bnd(nbnd);
-string[int] bndname(nbnd);
-int ibnd=0;
+	bool bplanestress=0;//false for 3D case
 
-// internal radius of the machine
-//bnd[ibnd] = [20084,20085,20086,20087,20088,20089,20090,20091,20092,20093,20219,20220,20221,20222,20223,20224,20225,20226,20227,20228,20311,20312,20313,20314,20315,20316,20317,20318,20319,20320,20426,20427,20428,20429,20430,20431,20432,20433,20434,20435];
-bnd[ibnd] = [20776,20777,20778,20779,20780,20781,20782,20783,20784,20785,20807,20808,20809,20810,20811,20812,20813,20814,20815,20816,20838,20839,20840,20841,20842,20843,20844,20845,20846,20847,20869,20870,20871,20872,20873,20874,20875,20876,20877,20878,20900,20901,20902,20903,20904,20905,20906,20907,20908,20909];
-bndname[ibnd]="srint";
-// external radius of the machine
-ibnd++;
-//bnd[ibnd] = [20146,20147,20148,20149,20150,20151,20152,20153,20154,20155,20260,20261,20262,20263,20264,20265,20266,20267,20268,20269,20352,20353,20354,20355,20356,20357,20358,20359,20360,20361,20457,20458,20459,20460,20461,20462,20463,20464,20465,20466];
-bnd[ibnd] = [20982,20983,20984,20985,20986,20987,20988,20989,20990,20991,21013,21014,21015,21016,21017,21018,21019,21020,21021,21022,21044,21045,21046,21047,21048,21049,21050,21051,21052,21053,21075,21076,21077,21078,21079,21080,21081,21082,21083,21084,21106,21107,21108,21109,21110,21111,21112,21113,21114,21115];
-bndname[ibnd]="srext";
-//symmetry plane (mid plane of the stator, perpendicular to the axis of the machine)
-ibnd++;
-//bnd[ibnd] = [20021,20022,20023,20024,20025,20026,20027,20028,20029,20030,20126,20127,20128,20129,20130,20131,20132,20133,20134,20135,20188,20189,20190,20191,20192,20193,20194,20195,20196,20197];
-bnd[ibnd] = [20021,20022,20023,20024,20025,20026,20027,20028,20029,20030,20126,20127,20128,20129,20130,20131,20132,20133,20134,20135,20188,20189,20190,20191,20192,20193,20194,20195,20196,20197,20930,20931,20932,20933,20934,20935,20936,20937,20938,20939,20755,20756,20757,20758,20759,20760,20761,20762,20763,20764];
-bndname[ibnd]="szmin";
-// external plane boundary pependicular to the machine axis
-ibnd++;
-//bnd[ibnd] = [20436,20437,20438,20439,20440,20441,20442,20443,20444,20445,20467,20468,20469,20470,20471,20472,20473,20474,20475,20476,20488,20489,20490,20491,20492,20493,20494,20495,20496,20497];
-bnd[ibnd] = [20693,20694,20695,20696,20697,20698,20699,20700,20701,20702,20662,20663,20664,20665,20666,20667,20668,20669,20670,20671,20631,20632,20633,20634,20635,20636,20637,20638,20639,20640,21085,21086,21087,21088,21089,21090,21091,21092,21093,21094,20910,20911,20912,20913,20914,20915,20916,20917,20918,20919];
-bndname[ibnd]="szmax";
-// periodicity planes (parallel to and containing the axis of the machine)
-ibnd++;
-//bnd[ibnd] = [20041,20073,20094,20105,20156,20167,20208,20249,20290,20331,20372,20393,20415,20446,20477];
-bnd[ibnd] = [20950,20971,21002,21033,21064,21095,20041,20073,20094,20105,20156,20167,20208,20249,20290,20331,20372,20393,20415,20446,20477,20600,20589,20578,20712,20682,20651,20724,20765,20796,20827,20858,20889];
-bndname[ibnd]="sperio1";
-ibnd++;
-//bnd[ibnd] = [20042,20083,20104,20115,20166,20177,20218,20259,20300,20341,20382,20403,20425,20456,20487];
-bnd[ibnd] = [20042,20083,20104,20115,20166,20177,20218,20259,20300,20341,20382,20403,20425,20456,20487,20960,20981,21012,21043,21074,21105,20588,20599,20610,20661,20692,20722,20734,20775,20806,20837,20868,20899];
-bndname[ibnd]="sperio2";
+	real angle=pi/7;
+	mesh3 Thper=movemesh(Th,[cos(angle)*x-sin(angle)*y,sin(angle)*x+cos(angle)*y,z]);
+	plot(Th,Thper,wait=1);
 
-//in and out surfaces for each phase winding (plus and minus)
-int[int][int] mpio(4*3); //minus/plus in/out boundary region indexes for the 3 phases
-int ip=0;
-mpio[4*ip+0]=[20133];mpio[4*ip+1]=[20195];mpio[4*ip+2]=[20190];mpio[4*ip+3]=[20128];
-ip++;
-mpio[4*ip+0]=[20126,20127];mpio[4*ip+1]=[20188,20189];mpio[4*ip+2]=[20193,20194];mpio[4*ip+3]=[20131,20132];
-ip++;
-mpio[4*ip+0]=[20129,20130];mpio[4*ip+1]=[20191,20192];mpio[4*ip+2]=[20196,20197];mpio[4*ip+3]=[20134,20135];
+	macro currentdensity(A,plus,bplot)
+	/* macro currentdensity(A,plus,bplot) compute current density field for phase "A plus"*/
+	ThP0vec1 vec(J#plus#A);
+	{
+	mesh3 Thtrunc = trunc(Th,reg#phase#plus[A]>0.5);
+	if(bplot) plot(Thtrunc,wait=1,cmm="mesh for current density phase "+Stringification(A)+Stringification(plus));
+	fespace ThtruncP1scal(Thtrunc,P1);
+	ThtruncP1scal v, vv;
+	solve laplace(v,vv)=int3d(Thtrunc)(grad(v)'*grad(vv))
+	+ on(bnd[ibndname["sphase"+Stringification(plus)+"in"+Stringification(A)]],v=0)
+	+ on(bnd[ibndname["sphase"+Stringification(plus)+"out"+Stringification(A)]],v=1);
+	vec(J#plus#A)=[reg#phase#plus[A]*dx(v),reg#phase#plus[A]*dy(v),reg#phase#plus[A]*dz(v)];
+	varf vonin(v,vv)=on(bnd[ibndname["sphase"+Stringification(plus)+"out"+Stringification(A)]],v=1);
+	ThtruncP1scal onin;
+	onin[]=vonin(0,ThtruncP1scal,tgv=1);
+	real I=int3d(Thtrunc)(vec(J#plus#A)'*[dx(onin),dy(onin),dz(onin)]); /*compute total current in*/
+	J#plus#A#x[]=J#plus#A#x[]/I; /*nomalized current density*/
+	savevtk(DIRres+"J"+Stringification(plus)+Stringification(A)+".vtu",Th,vec(J#plus#A),order=order0,dataname="J"+Stringification(plus)+Stringification(A));
+	fespace ThtruncP0vec(Thtrunc,[P0,P0,P0]);
+	ThtruncP0vec vec(jj);
+	vec(jj)=vec(J#plus#A);
+	savevtk(DIRres+"jj"+Stringification(plus)+Stringification(A)+".vtu",Thtrunc,vec(jj),order=order0,dataname="jj"+Stringification(plus)+Stringification(A));
+	}
+	// EOM
+	// surface regions
+	int nbnd=18;
+	int[int][int] bnd(nbnd);
+	string[int] bndname(nbnd);
+	int ibnd=0;
 
-for(int ip=0; ip<3;++ip)
-{
-ibnd++; bnd[ibnd] = [mpio[4*ip+0]]; bndname[ibnd]="sphaseminusin"+ip;
-ibnd++; bnd[ibnd] = [mpio[4*ip+1]]; bndname[ibnd]="sphaseminusout"+ip;
-ibnd++; bnd[ibnd] = [mpio[4*ip+2]]; bndname[ibnd]="sphaseplusin"+ip;
-ibnd++; bnd[ibnd] = [mpio[4*ip+3]]; bndname[ibnd]="sphaseplusout"+ip;
-}
+	// internal radius of the machine
+	//bnd[ibnd] = [20084,20085,20086,20087,20088,20089,20090,20091,20092,20093,20219,20220,20221,20222,20223,20224,20225,20226,20227,20228,20311,20312,20313,20314,20315,20316,20317,20318,20319,20320,20426,20427,20428,20429,20430,20431,20432,20433,20434,20435];
+	bnd[ibnd] = [20776,20777,20778,20779,20780,20781,20782,20783,20784,20785,20807,20808,20809,20810,20811,20812,20813,20814,20815,20816,20838,20839,20840,20841,20842,20843,20844,20845,20846,20847,20869,20870,20871,20872,20873,20874,20875,20876,20877,20878,20900,20901,20902,20903,20904,20905,20906,20907,20908,20909];
+	bndname[ibnd]="srint";
+	// external radius of the machine
+	ibnd++;
+	//bnd[ibnd] = [20146,20147,20148,20149,20150,20151,20152,20153,20154,20155,20260,20261,20262,20263,20264,20265,20266,20267,20268,20269,20352,20353,20354,20355,20356,20357,20358,20359,20360,20361,20457,20458,20459,20460,20461,20462,20463,20464,20465,20466];
+	bnd[ibnd] = [20982,20983,20984,20985,20986,20987,20988,20989,20990,20991,21013,21014,21015,21016,21017,21018,21019,21020,21021,21022,21044,21045,21046,21047,21048,21049,21050,21051,21052,21053,21075,21076,21077,21078,21079,21080,21081,21082,21083,21084,21106,21107,21108,21109,21110,21111,21112,21113,21114,21115];
+	bndname[ibnd]="srext";
+	//symmetry plane (mid plane of the stator, perpendicular to the axis of the machine)
+	ibnd++;
+	//bnd[ibnd] = [20021,20022,20023,20024,20025,20026,20027,20028,20029,20030,20126,20127,20128,20129,20130,20131,20132,20133,20134,20135,20188,20189,20190,20191,20192,20193,20194,20195,20196,20197];
+	bnd[ibnd] = [20021,20022,20023,20024,20025,20026,20027,20028,20029,20030,20126,20127,20128,20129,20130,20131,20132,20133,20134,20135,20188,20189,20190,20191,20192,20193,20194,20195,20196,20197,20930,20931,20932,20933,20934,20935,20936,20937,20938,20939,20755,20756,20757,20758,20759,20760,20761,20762,20763,20764];
+	bndname[ibnd]="szmin";
+	// external plane boundary pependicular to the machine axis
+	ibnd++;
+	//bnd[ibnd] = [20436,20437,20438,20439,20440,20441,20442,20443,20444,20445,20467,20468,20469,20470,20471,20472,20473,20474,20475,20476,20488,20489,20490,20491,20492,20493,20494,20495,20496,20497];
+	bnd[ibnd] = [20693,20694,20695,20696,20697,20698,20699,20700,20701,20702,20662,20663,20664,20665,20666,20667,20668,20669,20670,20671,20631,20632,20633,20634,20635,20636,20637,20638,20639,20640,21085,21086,21087,21088,21089,21090,21091,21092,21093,21094,20910,20911,20912,20913,20914,20915,20916,20917,20918,20919];
+	bndname[ibnd]="szmax";
+	// periodicity planes (parallel to and containing the axis of the machine)
+	ibnd++;
+	//bnd[ibnd] = [20041,20073,20094,20105,20156,20167,20208,20249,20290,20331,20372,20393,20415,20446,20477];
+	bnd[ibnd] = [20950,20971,21002,21033,21064,21095,20041,20073,20094,20105,20156,20167,20208,20249,20290,20331,20372,20393,20415,20446,20477,20600,20589,20578,20712,20682,20651,20724,20765,20796,20827,20858,20889];
+	bndname[ibnd]="sperio1";
+	ibnd++;
+	//bnd[ibnd] = [20042,20083,20104,20115,20166,20177,20218,20259,20300,20341,20382,20403,20425,20456,20487];
+	bnd[ibnd] = [20042,20083,20104,20115,20166,20177,20218,20259,20300,20341,20382,20403,20425,20456,20487,20960,20981,21012,21043,21074,21105,20588,20599,20610,20661,20692,20722,20734,20775,20806,20837,20868,20899];
+	bndname[ibnd]="sperio2";
 
-int[string] ibndname; //to get the boundary index by name
-for(int i=0;i<nbnd;++i) ibndname[bndname[i]]=i;
+	//in and out surfaces for each phase winding (plus and minus)
+	int[int][int] mpio(4*3); //minus/plus in/out boundary region indexes for the 3 phases
+	int ip=0;
+	mpio[4*ip+0]=[20133];mpio[4*ip+1]=[20195];mpio[4*ip+2]=[20190];mpio[4*ip+3]=[20128];
+	ip++;
+	mpio[4*ip+0]=[20126,20127];mpio[4*ip+1]=[20188,20189];mpio[4*ip+2]=[20193,20194];mpio[4*ip+3]=[20131,20132];
+	ip++;
+	mpio[4*ip+0]=[20129,20130];mpio[4*ip+1]=[20191,20192];mpio[4*ip+2]=[20196,20197];mpio[4*ip+3]=[20134,20135];
 
-// boundary Dirichlet
-int[int] sBn0=bnd[ibndname["srint"]];
-sBn0=[sBn0,bnd[ibndname["srext"]]];
-sBn0=[sBn0,bnd[ibndname["szmin"]]];
-sBn0=[sBn0,bnd[ibndname["szmax"]]];
+	for(int ip=0; ip<3;++ip){
+		ibnd++; bnd[ibnd] = [mpio[4*ip+0]]; bndname[ibnd]="sphaseminusin"+ip;
+		ibnd++; bnd[ibnd] = [mpio[4*ip+1]]; bndname[ibnd]="sphaseminusout"+ip;
+		ibnd++; bnd[ibnd] = [mpio[4*ip+2]]; bndname[ibnd]="sphaseplusin"+ip;
+		ibnd++; bnd[ibnd] = [mpio[4*ip+3]]; bndname[ibnd]="sphaseplusout"+ip;
+	}
 
-int[int] sBn02 = bnd[ibndname["srint"]];
-//volume regions
-int[int][int] rotor(1), magnet(2),stator(1),air(1);
-rotor[0]=[ROTOR];
-magnet[0]=[IMA1];magnet[1]=[IMA2];
-stator[0]=[ESTATOR];
+	int[string] ibndname; //to get the boundary index by name
+	for(int i=0;i<nbnd;++i) ibndname[bndname[i]]=i;
 
-air[0]=[ARARCRI,ARARCRE,AR1,AR31,AR32,AR21,AR22,AR23,ARSUP,ARRI1,ARRE1]; //3D mesh
+	// boundary Dirichlet
+	int[int] sBn0=bnd[ibndname["srint"]];
+	sBn0=[sBn0,bnd[ibndname["srext"]]];
+	sBn0=[sBn0,bnd[ibndname["szmin"]]];
+	sBn0=[sBn0,bnd[ibndname["szmax"]]];
 
-int[int][int] phaseplus(3);
-phaseplus[0]=[FASEUP];
-phaseplus[1]=[FASEVP];
-phaseplus[2]=[FASEWP];
+	int[int] sBn02 = bnd[ibndname["srint"]];
+	//volume regions
+	int[int][int] rotor(1), magnet(2),stator(1),air(1);
+	rotor[0]=[ROTOR];
+	magnet[0]=[IMA1];magnet[1]=[IMA2];
+	stator[0]=[ESTATOR];
 
-int[int][int] phaseminus(3);
-phaseminus[0]=[FASEUM];
-phaseminus[1]=[FASEVM];
-phaseminus[2]=[FASEWM];
+	air[0]=[ARARCRI,ARARCRE,AR1,AR31,AR32,AR21,AR22,AR23,ARSUP,ARRI1,ARRE1]; //3D mesh
 
-int[int][int] coil(6);/*
-coil[0]=[UPLUS];
-coil[1]=[VPLUS];
-coil[2]=[WPLUS];
-coil[3]=[UMINUS];
-coil[4]=[VMINUS];
-coil[5]=[WMINUS];*/
-coil[0] = [FASEUP];
-coil[1] = [FASEVP];
-coil[2] = [FASEWP];
-coil[3] = [FASEUM];
-coil[4] = [FASEVM];
-coil[5] = [FASEWM];
+	int[int][int] phaseplus(3);
+	phaseplus[0]=[FASEUP];
+	phaseplus[1]=[FASEVP];
+	phaseplus[2]=[FASEWP];
 
-macro vecBr [0,0,Br*(regmagnet[0]-regmagnet[1])] //
+	int[int][int] phaseminus(3);
+	phaseminus[0]=[FASEUM];
+	phaseminus[1]=[FASEVM];
+	phaseminus[2]=[FASEWM];
 
+	int[int][int] coil(6);/*
+	coil[0]=[UPLUS];
+	coil[1]=[VPLUS];
+	coil[2]=[WPLUS];
+	coil[3]=[UMINUS];
+	coil[4]=[VMINUS];
+	coil[5]=[WMINUS];*/
+	coil[0] = [FASEUP];
+	coil[1] = [FASEVP];
+	coil[2] = [FASEWP];
+	coil[3] = [FASEUM];
+	coil[4] = [FASEVM];
+	coil[5] = [FASEWM];
+
+	macro vecBr [0,0,Br*(regmagnet[0]-regmagnet[1])] //
 ENDIFMACRO
 
 real[int] usupportcoef=vecff(1,1,1);
@@ -480,74 +478,69 @@ vec2(m) = nu0*(vec2(Br));
 //vec2(m) = nu0*vec2(h)*(mu-u0)+nu0*vec2(Br);
 
 IFMACRO(DIM,2)
-savevtk(DIRres+"A.vtu",Th,a,order=order1,dataname="a");
-savevtk(DIRres+"B.vtu",Th,[bx,by,0],order=order0,dataname="b");
-savevtk(DIRres+"M.vtu",Th,[hx,hy,0],order=order0,dataname="m");
-savevtk(DIRres+"H.vtu",Th,[mx,my,0],order=order0,dataname="h");
+	savevtk(DIRres+"A.vtu",Th,a,order=order1,dataname="a");
+	savevtk(DIRres+"B.vtu",Th,[bx,by,0],order=order0,dataname="b");
+	savevtk(DIRres+"M.vtu",Th,[hx,hy,0],order=order0,dataname="m");
+	savevtk(DIRres+"H.vtu",Th,[mx,my,0],order=order0,dataname="h");
 
-plot(vec1(JJ),wait=1,value=1,fill=1,cmm="JJ");
-plot(vec(Br),wait=1,fill=1,value=1,cmm="Br");
-plot(vec(b),wait=1,fill=1,value=1,cmm="B");
-plot(vec(h),wait=1,fill=1,value=1,cmm="B");
-plot(vec(m),wait=1,fill=1,value=1,cmm="B");
-
+	plot(vec1(JJ),wait=1,value=1,fill=1,cmm="JJ");
+	plot(vec(Br),wait=1,fill=1,value=1,cmm="Br");
+	plot(vec(b),wait=1,fill=1,value=1,cmm="B");
+	plot(vec(h),wait=1,fill=1,value=1,cmm="B");
+	plot(vec(m),wait=1,fill=1,value=1,cmm="B");
 ENDIFMACRO
 
 IFMACRO(DIM,3)
-savevtk(DIRres+"JJ.vtu",Th,vec1(JJ),order=order0,dataname="J");
-savevtk(DIRres+"A.vtu",Th,vec(a),order=order1,dataname="a");
-savevtk(DIRres+"B.vtu",Th,vec(b),order=order0,dataname="b");
-savevtk(DIRres+"Br.vtu",Th,vec(Br),order=order0,dataname="br");
-savevtk(DIRres+"M.vtu",Th,vec2(m),order=order0,dataname="m");
-savevtk(DIRres+"H.vtu",Th,vec2(h),order=order0,dataname="h");
-
-
-
+	savevtk(DIRres+"JJ.vtu",Th,vec1(JJ),order=order0,dataname="J");
+	savevtk(DIRres+"A.vtu",Th,vec(a),order=order1,dataname="a");
+	savevtk(DIRres+"B.vtu",Th,vec(b),order=order0,dataname="b");
+	savevtk(DIRres+"Br.vtu",Th,vec(Br),order=order0,dataname="br");
+	savevtk(DIRres+"M.vtu",Th,vec2(m),order=order0,dataname="m");
+	savevtk(DIRres+"H.vtu",Th,vec2(h),order=order0,dataname="h");
 ENDIFMACRO
 
 IFMACRO(DIM,2)
-// Exportando para o Octave
-real tr = (pi*rm)/p;
-real[int] xcoord(1001), Babs(1001), Brmx(1001), Brmy(1001);
-ofstream file1("Babs.txt");
-real zcoord = hest+hbob+hgap/2; //0.01515
-int i;// x vai de 0 até tr/2
-for (i=1; i<1001; i++){
-	xcoord[i] = (tr/1000)*i;
-	Babs[i] = sqrt(bx(xcoord[i],0.01515)^2+by(xcoord[i],0.01515)^2);
-	Brmx[i] = bx(xcoord[i],0.01515);
-	Brmy[i] = by(xcoord[i],0.01515);
-	file1 << xcoord[i] << " " << Babs[i] << " " << Brmx[i] << " " << Brmy[i] << " " << endl;
-}
+	// Exportando para o Octave
+	real tr = (pi*rm)/p;
+	real[int] xcoord(1001), Babs(1001), Brmx(1001), Brmy(1001);
+	ofstream file1("Babs.txt");
+	real zcoord = hest+hbob+hgap/2; //0.01515
+	int i;// x vai de 0 até tr/2
+	for (i=1; i<1001; i++){
+		xcoord[i] = (tr/1000)*i;
+		Babs[i] = sqrt(bx(xcoord[i],0.01515)^2+by(xcoord[i],0.01515)^2);
+		Brmx[i] = bx(xcoord[i],0.01515);
+		Brmy[i] = by(xcoord[i],0.01515);
+		file1 << xcoord[i] << " " << Babs[i] << " " << Brmx[i] << " " << Brmy[i] << " " << endl;
+	}
 ENDIFMACRO
 
 IFMACRO(DIM,3)
-real trad = (theta/2)*(pi/180);
-int imax = 20000;
-real ang;
-real[int] xcoord(imax), ycoord(imax), Babs(imax), Brmx(imax), Brmy(imax), Brmz(imax);
-real[int] Jdx(imax), Jdy(imax), Jdz(imax);
-real zcoord = hest+hbob+hgap/2;
-ofstream file1("b3D.txt");
-int i;
-for (i=1; i<imax; i++){
-	xcoord[i] = rm*sin(i*(trad/(imax-1)));
-	ycoord[i] = rm*cos(i*(trad/(imax-1)));
-	ang = (180/pi)*(i)*(trad/(imax-1));
-	Babs[i] = sqrt(bx(xcoord[i],ycoord[i],zcoord)^2+by(xcoord[i],ycoord[i],zcoord)^2+bz(xcoord[i],ycoord[i],zcoord)^2);
-	Brmx[i] = bx(xcoord[i],ycoord[i],zcoord);
-	Brmy[i] = by(xcoord[i],ycoord[i],zcoord);
-	Brmz[i] = bz(xcoord[i],ycoord[i],zcoord);
-	file1 << ang << " " << Babs[i] << " " << Brmx[i] << " " << Brmy[i] << " " << Brmz[i]  << endl;
-}
-
+	real trad = (theta/2)*(pi/180);
+	int imax = 20000;
+	real ang;
+	real[int] xcoord(imax), ycoord(imax), Babs(imax), Brmx(imax), Brmy(imax), Brmz(imax);
+	real[int] Jdx(imax), Jdy(imax), Jdz(imax);
+	real zcoord = hest+hbob+hgap/2;
+	ofstream file1("b3D.txt");
+	int i;
+	for (i=1; i<imax; i++){
+		xcoord[i] = rm*sin(i*(trad/(imax-1)));
+		ycoord[i] = rm*cos(i*(trad/(imax-1)));
+		ang = (180/pi)*(i)*(trad/(imax-1));
+		Babs[i] = sqrt(bx(xcoord[i],ycoord[i],zcoord)^2+by(xcoord[i],ycoord[i],zcoord)^2+bz(xcoord[i],ycoord[i],zcoord)^2);
+		Brmx[i] = bx(xcoord[i],ycoord[i],zcoord);
+		Brmy[i] = by(xcoord[i],ycoord[i],zcoord);
+		Brmz[i] = bz(xcoord[i],ycoord[i],zcoord);
+		file1 << ang << " " << Babs[i] << " " << Brmx[i] << " " << Brmy[i] << " " << Brmz[i]  << endl;
+	}
 ENDIFMACRO
 /*
 IFMACRO(DIM,3)
-[tens2comp(tm0)] = [hx*bx,hy*by,hz*bz,0.5*(hy*bz+hz*by),0.5*(hx*bz+hz*bx),0.5*(hx*by+bx*hy)]-0.5*nu0*[bx*bx+by*by+bz*bz,bx*bx+by*by+bz*bz,bx*bx+by*by+bz*bz,0,0,0];
-[tens2comp(tm1)] = [tens2comp(tm0)]+[bx*mx,by*my,bz*mz,0.5*(by*mz+bz*my),0.5*(bx*mz+bz*mx),0.5*(bx*my+by*mx)];
-[tens2comp(tm2)] = [tens2comp(tm0)]-[bx*mx,by*my,bz*mz,0.5*(by*mz+bz*my),0.5*(bx*mz+bz*mx),0.5*(bx*my+by*mx)]+[mx*bx+my*by+mz*bz,mx*bx+my*by+mz*bz,mx*bx+my*by+mz*bz,0,0,0];
-[tens2comp(tm3)] = [tens2comp(tm0)]+[mx*bx+my*by+mz*bz,mx*bx+my*by+mz*bz,mx*bx+my*by+mz*bz,0,0,0];
+	[tens2comp(tm0)] = [hx*bx,hy*by,hz*bz,0.5*(hy*bz+hz*by),0.5*(hx*bz+hz*bx),0.5*(hx*by+bx*hy)]-0.5*nu0*[bx*bx+by*by+bz*bz,bx*bx+by*by+bz*bz,bx*bx+by*by+bz*bz,0,0,0];
+	[tens2comp(tm1)] = [tens2comp(tm0)]+[bx*mx,by*my,bz*mz,0.5*(by*mz+bz*my),0.5*(bx*mz+bz*mx),0.5*(bx*my+by*mx)];
+	[tens2comp(tm2)] = [tens2comp(tm0)]-[bx*mx,by*my,bz*mz,0.5*(by*mz+bz*my),0.5*(bx*mz+bz*mx),0.5*(bx*my+by*mx)]+[mx*bx+my*by+mz*bz,mx*bx+my*by+mz*bz,mx*bx+my*by+mz*bz,0,0,0];
+	[tens2comp(tm3)] = [tens2comp(tm0)]+[mx*bx+my*by+mz*bz,mx*bx+my*by+mz*bz,mx*bx+my*by+mz*bz,0,0,0];
 
 ENDIFMACRO
 
@@ -592,76 +585,76 @@ cout << "tt = " << surf2 << endl;
 cout << "tt = " << surf3 << endl; */
 
 IFMACRO(DIM,2)
-[tens2comp(tm0)] = [hx*bx,hy*by,0.5*(hx*by+bx*hy)]-0.5*nu0*[bx*bx+by*by,bx*bx+by*by,0];
-[tens2comp(tm1)] = [tens2comp(tm0)]+[bx*mx,by*my,0.5*(bx*my+by*mx)];
-[tens2comp(tm2)] = [tens2comp(tm0)]-[bx*mx,by*my,0.5*(bx*my+by*mx)]+[mx*bx+my*by,mx*bx+my*by,0];
-[tens2comp(tm3)] = [tens2comp(tm0)]+[mx*bx+my*by,mx*bx+my*by,0];
+	[tens2comp(tm0)] = [hx*bx,hy*by,0.5*(hx*by+bx*hy)]-0.5*nu0*[bx*bx+by*by,bx*bx+by*by,0];
+	[tens2comp(tm1)] = [tens2comp(tm0)]+[bx*mx,by*my,0.5*(bx*my+by*mx)];
+	[tens2comp(tm2)] = [tens2comp(tm0)]-[bx*mx,by*my,0.5*(bx*my+by*mx)]+[mx*bx+my*by,mx*bx+my*by,0];
+	[tens2comp(tm3)] = [tens2comp(tm0)]+[mx*bx+my*by,mx*bx+my*by,0];
 ENDIFMACRO
 
 IFMACRO(DIM,3)
-[tens2comp(tm0)] = [hx*bx,hy*by,hz*bz,0.5*(hy*bz+hz*by),0.5*(hx*bz+hz*bx),0.5*(hx*by+bx*hy)]-0.5*nu0*[bx*bx+by*by+bz*bz,bx*bx+by*by+bz*bz,bx*bx+by*by+bz*bz,0,0,0];
-[tens2comp(tm1)] = [tens2comp(tm0)]+[bx*mx,by*my,bz*mz,0.5*(by*mz+bz*my),0.5*(bx*mz+bz*mx),0.5*(bx*my+by*mx)];
-[tens2comp(tm2)] = [tens2comp(tm0)]-[bx*mx,by*my,bz*mz,0.5*(by*mz+bz*my),0.5*(bx*mz+bz*mx),0.5*(bx*my+by*mx)]+[mx*bx+my*by+mz*bz,mx*bx+my*by+mz*bz,mx*bx+my*by+mz*bz,0,0,0];
-[tens2comp(tm3)] = [tens2comp(tm0)]+[mx*bx+my*by+mz*bz,mx*bx+my*by+mz*bz,mx*bx+my*by+mz*bz,0,0,0];
+	[tens2comp(tm0)] = [hx*bx,hy*by,hz*bz,0.5*(hy*bz+hz*by),0.5*(hx*bz+hz*bx),0.5*(hx*by+bx*hy)]-0.5*nu0*[bx*bx+by*by+bz*bz,bx*bx+by*by+bz*bz,bx*bx+by*by+bz*bz,0,0,0];
+	[tens2comp(tm1)] = [tens2comp(tm0)]+[bx*mx,by*my,bz*mz,0.5*(by*mz+bz*my),0.5*(bx*mz+bz*mx),0.5*(bx*my+by*mx)];
+	[tens2comp(tm2)] = [tens2comp(tm0)]-[bx*mx,by*my,bz*mz,0.5*(by*mz+bz*my),0.5*(bx*mz+bz*mx),0.5*(bx*my+by*mx)]+[mx*bx+my*by+mz*bz,mx*bx+my*by+mz*bz,mx*bx+my*by+mz*bz,0,0,0];
+	[tens2comp(tm3)] = [tens2comp(tm0)]+[mx*bx+my*by+mz*bz,mx*bx+my*by+mz*bz,mx*bx+my*by+mz*bz,0,0,0];
 
 ENDIFMACRO
 
 
 IFMACRO(DIM,2)
-varf nodesurface(vec(u),vec(uu)) =  intnd(Th)(uux+uuy);
-ThP1vec vec(nodesurf);
-nodesurfx[]=nodesurface(0,ThP1vec);
-macro forcnod(rotor,magnet,t0)
-varf forcemag(vec(u),vec(uu)) =  intnd(Th)(-T2grads(tm2,uu));
-ThP1vec vec(forct);
-forctx[]=forcemag(0,ThP1vec);
-savevtk(DIRres+"forc"+Stringification(t0)+".vtu",Th#rotor#magnet,[forctx,forcty,0],order=order1,dataname=Stringification(t0));
-savevtk(DIRres+"nodesurf"+Stringification(t0)+".vtu",Th#rotor#magnet,[nodesurfx,nodesurfy,0],order=order1,dataname=Stringification(nodesurf));
-forctx[]./=nodesurfx[];
-savevtk(DIRres+"densforc"+Stringification(t0)+".vtu",Th#rotor#magnet,[forctx,forcty,0],order=order1,dataname=Stringification(denst0));
-//
+	varf nodesurface(vec(u),vec(uu)) =  intnd(Th)(uux+uuy);
+	ThP1vec vec(nodesurf);
+	nodesurfx[]=nodesurface(0,ThP1vec);
+	macro forcnod(rotor,magnet,t0)
+	varf forcemag(vec(u),vec(uu)) =  intnd(Th)(-T2grads(tm2,uu));
+	ThP1vec vec(forct);
+	forctx[]=forcemag(0,ThP1vec);
+	savevtk(DIRres+"forc"+Stringification(t0)+".vtu",Th#rotor#magnet,[forctx,forcty,0],order=order1,dataname=Stringification(t0));
+	savevtk(DIRres+"nodesurf"+Stringification(t0)+".vtu",Th#rotor#magnet,[nodesurfx,nodesurfy,0],order=order1,dataname=Stringification(nodesurf));
+	forctx[]./=nodesurfx[];
+	savevtk(DIRres+"densforc"+Stringification(t0)+".vtu",Th#rotor#magnet,[forctx,forcty,0],order=order1,dataname=Stringification(denst0));
+	//
 ENDIFMACRO
 
 IFMACRO(DIM,3)
-macro R sqrt(x*x+y*y) //
+	macro R sqrt(x*x+y*y) //
 
-varf nodevol(vec(u),vec(uu)) =  intnd(Th)(uux+uuy+uuz);
-ThP1vec vec(nodevol);
-nodevolx[]=nodevol(0,ThP1vec);
+	varf nodevol(vec(u),vec(uu)) =  intnd(Th)(uux+uuy+uuz);
+	ThP1vec vec(nodevol);
+	nodevolx[]=nodevol(0,ThP1vec);
 
-macro forcnod(rotor,magnet,t0)
-varf forcemag(vec(u),vec(uu)) =  intnd(Th)(-T2grads(tm2,uu));
-ThP1vec vec(forct);
-forctx[]=forcemag(0,ThP1vec);
-savevtk(DIRres+"forc"+Stringification(t0)+".vtu",Th#rotor#magnet,[forctx,forcty,forctz],order=order1,dataname=Stringification(t0));
-savevtk(DIRres+"nodevol"+Stringification(t0)+".vtu",Th#rotor#magnet,[nodevolx,nodevoly,nodevolz],order=order1,dataname=Stringification(nodevol));
-forctx[]./=nodevolx[];
-savevtk(DIRres+"densforc"+Stringification(t0)+".vtu",Th#rotor#magnet,[forctx,forcty,forctz],order=order1,dataname=Stringification(denst0));
+	macro forcnod(rotor,magnet,t0)
+	varf forcemag(vec(u),vec(uu)) =  intnd(Th)(-T2grads(tm2,uu));
+	ThP1vec vec(forct);
+	forctx[]=forcemag(0,ThP1vec);
+	savevtk(DIRres+"forc"+Stringification(t0)+".vtu",Th#rotor#magnet,[forctx,forcty,forctz],order=order1,dataname=Stringification(t0));
+	savevtk(DIRres+"nodevol"+Stringification(t0)+".vtu",Th#rotor#magnet,[nodevolx,nodevoly,nodevolz],order=order1,dataname=Stringification(nodevol));
+	forctx[]./=nodevolx[];
+	savevtk(DIRres+"densforc"+Stringification(t0)+".vtu",Th#rotor#magnet,[forctx,forcty,forctz],order=order1,dataname=Stringification(denst0));
 
-FEspace(Th23,P0,vec);
-Th23P0vec vec(b3)=vec(b),vec(b3cyl);
-savevtk(DIRres+"B3.vtu",Th23,vec(b3),order=order0,dataname="b3");
+	FEspace(Th23,P0,vec);
+	Th23P0vec vec(b3)=vec(b),vec(b3cyl);
+	savevtk(DIRres+"B3.vtu",Th23,vec(b3),order=order0,dataname="b3");
 
-Th23P0vec vec(ur),vec(ut),vec(uz);
-vec(ur)=[x/R,y/R,0];
-vec(ut)=[-y/R,x/R,0];
-vec(uz)=[0,0,1];
+	Th23P0vec vec(ur),vec(ut),vec(uz);
+	vec(ur)=[x/R,y/R,0];
+	vec(ut)=[-y/R,x/R,0];
+	vec(uz)=[0,0,1];
 
-vec(b3cyl)=[vec(-b3)'*vec(ut),vec(-b3)'*vec(uz),vec(b3)'*vec(ur)]; /*manual sign change*/
-FEspace(Th23d,P0,vec);
-Th23dP0vec vec(b23d);
-b23dx[]=b3cylx[];
-savevtk(DIRres+"B23d.vtu",Th23d,[b23dx,b23dy,b23dz],order=order0,dataname="b23d");
+	vec(b3cyl)=[vec(-b3)'*vec(ut),vec(-b3)'*vec(uz),vec(b3)'*vec(ur)]; /*manual sign change*/
+	FEspace(Th23d,P0,vec);
+	Th23dP0vec vec(b23d);
+	b23dx[]=b3cylx[];
+	savevtk(DIRres+"B23d.vtu",Th23d,[b23dx,b23dy,b23dz],order=order0,dataname="b23d");
 
-Th23P0vec vec(f3)=vec(forct),vec(f3cyl);
-savevtk(DIRres+"f3.vtu",Th23,vec(f3),order=order0,dataname="f3");
+	Th23P0vec vec(f3)=vec(forct),vec(f3cyl);
+	savevtk(DIRres+"f3.vtu",Th23,vec(f3),order=order0,dataname="f3");
 
-vec(f3cyl)=[vec(-f3)'*vec(ut),vec(-f3)'*vec(uz),vec(f3)'*vec(ur)]; /*manual sign change*/
-Th23dP0vec vec(f23d);
-f23dx[]=f3cylx[];
-savevtk(DIRres+"f23d.vtu",Th23d,[f23dx,f23dy,f23dz],order=order0,dataname="f23d");
+	vec(f3cyl)=[vec(-f3)'*vec(ut),vec(-f3)'*vec(uz),vec(f3)'*vec(ur)]; /*manual sign change*/
+	Th23dP0vec vec(f23d);
+	f23dx[]=f3cylx[];
+	savevtk(DIRres+"f23d.vtu",Th23d,[f23dx,f23dy,f23dz],order=order0,dataname="f23d");
 
-//
+	//
 ENDIFMACRO
 
 forcnod(,,tm2); // Choose between (rotor,magnet) or (stator,coil)

@@ -40,7 +40,7 @@ IFMACRO(DIM,2)
 	// directory where the results should be saved
 	string DIRres="results/2D/Pedro/";
 
-	mesh Th = gmshload("afm2D.msh");
+	mesh Th = gmshload("biggerMesh2D.msh");
 	plot(Th,wait=1);
 
 	bool bplanestress=0;// true if plane stress, false if plane strain
@@ -322,15 +322,17 @@ vec2(m) = nu0*(vec2(Br));
 //                   + regphaseminus[0]+regphaseminus[1]+regphaseminus[2]);
 //vec2(m) = nu0*vec2(h)*(mu-u0)+nu0*vec2(Br);
 
-IFMACRO(DIM,2)  //  Save results and plot data
-	//savevtk(DIRres+"A.vtu",Th,a,order=order1,dataname="a");
-	//savevtk(DIRres+"B.vtu",Th,[bx,by,0],order=order0,dataname="b");
-	//savevtk(DIRres+"M.vtu",Th,[hx,hy,0],order=order0,dataname="m");
-	//savevtk(DIRres+"H.vtu",Th,[mx,my,0],order=order0,dataname="h");
+if(false){ //  Save results
+	savevtk(DIRres+"A.vtu",Th,a,order=order1,dataname="a");
+	savevtk(DIRres+"B.vtu",Th,[bx,by,0],order=order0,dataname="b");
+	savevtk(DIRres+"M.vtu",Th,[hx,hy,0],order=order0,dataname="m");
+	savevtk(DIRres+"H.vtu",Th,[mx,my,0],order=order0,dataname="h");
+}
 
-	//plot(vec1(JJ),wait=1,value=1,fill=1,cmm="JJ");
-	//plot(vec(Br),wait=1,fill=1,value=1,cmm="Br");
-	//plot(vec(b),wait=1,fill=1,value=1,cmm="B");
-	//plot(vec(h),wait=1,fill=1,value=1,cmm="B");
-	//plot(vec(m),wait=1,fill=1,value=1,cmm="B");
-ENDIFMACRO
+if(false){ // Plot data
+	plot(vec1(JJ),wait=1,value=1,fill=1,cmm="JJ");
+	plot(vec(Br),wait=1,fill=1,value=1,cmm="Br");
+	plot(vec(b),wait=1,fill=1,value=1,cmm="B");
+	plot(vec(h),wait=1,fill=1,value=1,cmm="B");
+	plot(vec(m),wait=1,fill=1,value=1,cmm="B");
+}

@@ -40,7 +40,7 @@ IFMACRO(DIM,2)
 	// directory where the results should be saved
 	string DIRres="results/2D/";
 
-	mesh Th = gmshload("afm2D2.msh");
+	mesh Th = gmshload("malhas/afm2D2.msh");
 	plot(Th,wait=1);
 
 	bool bplanestress=0;// true if plane stress, false if plane strain
@@ -135,10 +135,10 @@ IFMACRO(DIM,3)
 	// directory where the results should be saved
 	string DIRres="results/3D/";
 
-	mesh3 Th = gmshload3("afm3Dv2.msh");
+	mesh3 Th = gmshload3("malhas/afm3Dv2.msh");
 	plot(Th,wait=1);
 
-	mesh Th2 = gmshload("afm2D2.msh");
+	mesh Th2 = gmshload("malhas/afm2D2.msh");
 	plot(Th2,wait=1);
 
 	meshS Th23d = movemesh23(Th2, transfo=[x,y,0]);

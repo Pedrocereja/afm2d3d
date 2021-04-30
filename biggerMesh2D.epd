@@ -40,7 +40,7 @@ IFMACRO(DIM,2)
 	// directory where the results should be saved
 	string DIRres="results/2D/";
 
-	mesh Th = gmshload("biggerMesh2D.msh");
+	mesh Th = gmshload("malhas/biggerMesh2D.msh");
 	plot(Th,wait=1);
 
 	bool bplanestress=0;// true if plane stress, false if plane strain

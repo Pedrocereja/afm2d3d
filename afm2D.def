@@ -12,6 +12,9 @@ real alfa;
 real pg;
 real pfe;
 real pim;
+real zair;
+real pair;
+real riair;
 
 int ESTATOR;
 int VPLUS;

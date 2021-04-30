@@ -1,0 +1,338 @@
+include "FETOOLS.edp"
+include "REDSYS.edp"
+include "ARRAYS.edp"
+
+load "gmsh"
+load "iovtk"
+load "medit"
+load "msh3"
+
+macro DIM 2 // /* 2=2D , 3=3D */
+
+bool bcheckboundaries=false; // set to "true" to check the boundary regions
+bool bplotregion=false; // set to "true" to plot the physical regions
+bool bplotcoils=false; // set to "true" to plot the mesh associated with each coil (3D) or the current density associated to each coil (2D)
+bool bperiodicity=true; // set to "true" to apply periodicity condition
+bool bcheckperiodicitydofs = false; // set to "true" to check the periodicity dofs
+bool bchecksupport=false;
+bool bcomputeinterp=1;
+
+real Itot = 474.67; // total current in coils section (A) (in the considered configuration, phase U (or 0) has null current, and phase V (or 1) and W (or 2) carry the same current (up to the sign))
+real Jimp = 7.8e5; // Imposed current density
+real I1=Itot;
+//real I2=-I1;
+
+real Br = 1.17; // remanent induction of the magnets (T)
+
+real mu0 = 4*pi*1e-7; //vacuum permeability
+real nu0 = 1./mu0; // vacuum reluctivity
+real muiron = 1000*mu0; // iron permeablitiy
+real nuiron = 1./muiron; // iron reluctivity
+real mupm = 1.05*mu0; // permanent magnet permeability
+real nupm = 1./mupm; // permanent magnet reluctivity
+real mucoil = mu0; // coil permeability
+real nucoil = 1./mucoil; // coil reluctivity
+
+IFMACRO(DIM,2)
+	include "afm2D.def"
+	include "afm2D.init"
+	include "../include/MACROS2D.edp"
+	// directory where the results should be saved
+	string DIRres="results/2D/Pedro/";
+
+	mesh Th = gmshload("biggerMesh2D.msh");
+	plot(Th,wait=1);
+
+	bool bplanestress=0;// true if plane stress, false if plane strain
+
+	mesh Thper=movemesh(Th,[x+2*(3.14*rm)/p,y]); // Malha perpendicular à original (lado direito)
+	plot(Th,Thper,wait=1);
+
+	real[string] signcurrent;
+	signcurrent["plus"]=1;
+	signcurrent["minus"]=-1;
+
+	macro currentdensity(A,plus,bplot)
+	/* macro currentdensity(A,plus,bplot) compute current density field for phase "A plus"*/
+	ThP0vec1 J#plus#A;
+	{
+	real surf=int2d(Th,phase#plus#[A])(1);
+	J#plus#A=regphase#plus#[A]*signcurrent[Stringification(plus)]/surf;
+	/*J#plus#A=regphase#plus#[A]*signcurrent[Stringification(plus)];*/
+	if(bplot) plot(J#plus#A,wait=1,fill=1,value=1,cmm="J"+Stringification(plus)+Stringification(A)+" (A/m2)");
+	}
+
+	// surface regions
+	int nbnd=4;
+	int[int][int] bnd(nbnd);
+	string[int] bndname(nbnd);
+	int ibnd=0;
+	//symmetry plane (mid plane of the stator, perpendicular to the axis of the machine)
+	bnd[ibnd] = [ESTATORL1];
+	bndname[ibnd]="szmin";
+	// external plane boundary pependicular to the machine axis
+	ibnd++;
+	bnd[ibnd] = [CAMSARS];
+	//bnd[ibnd] = [ROTORL43];
+	bndname[ibnd]="szmax";
+	// periodicity planes (parallel to and containing the axis of the machine)
+	ibnd++;
+	bnd[ibnd] = [ESTATORL2,WML16,GAP1L23,GAP23L35,ROTORL41,CAMSARLD];
+	//bnd[ibnd] = [ESTATORL2,WML16,GAP1L23,GAP23L35,ROTORL41];
+	bndname[ibnd]="sperio1";
+	ibnd++;
+	bnd[ibnd] = [ESTATORL3,VPL10,GAP1L24,GAP21L30,ROTORL42,CAMSARLE];
+	//bnd[ibnd] = [ESTATORL3,VPL10,GAP1L24,GAP21L30,ROTORL42];
+	bndname[ibnd]="sperio2";
+
+	int[string] ibndname; //to get the boundary index by name
+	for(int i=0;i<nbnd;++i) ibndname[bndname[i]]=i;
+
+	// boundary Dirichlet
+	int[int] sBn0 = [bnd[ibndname["szmin"]]];
+	sBn0=[sBn0,bnd[ibndname["szmax"]]];
+
+	//volume regions
+	int[int][int] rotor(1), magnet(2),stator(1),air(1);
+	rotor[0]=[ROTOR];
+	magnet[0]=[IMA1];magnet[1]=[IMA2];
+	stator[0]=[ESTATOR];
+
+	air[0]=[GAP1,GAP21,GAP22,GAP23,CAMSAR]; //2D mesh
+	//air[0]=[GAP1,GAP21,GAP22,GAP23]; //2D mesh
+
+	int[int][int] phaseplus(3),coil(6);
+	//phaseplus[0]=[UPLUS];
+	//phaseplus[1]=[VPLUS];
+	//phaseplus[2]=[WPLUS];
+	phaseplus[0]=[UPLUS];
+	phaseplus[1]=[VPLUS];
+	phaseplus[2]=[WPLUS];
+
+	int[int][int] phaseminus(3);
+	//phaseminus[0]=[UMINUS];
+	//phaseminus[1]=[VMINUS];
+	//phaseminus[2]=[WMINUS];
+	phaseminus[0]=[UMINUS];
+	phaseminus[1]=[VMINUS];
+	phaseminus[2]=[WMINUS];
+
+	coil[0]=[UPLUS];
+	coil[1]=[VPLUS];
+	coil[2]=[WPLUS];
+	coil[3]=[UMINUS];
+	coil[4]=[VMINUS];
+	coil[5]=[WMINUS];
+
+	macro vecBr [0,Br*(regmagnet[0]-regmagnet[1])] //
+
+ENDIFMACRO
+
+real[int] usupportcoef = vecff(1,1,1);
+real[int] udircoef = vecff(1,1,1);
+
+int[int] order0=[0]; // for cell based fields (savevtk interpolates at the center of the tetrahedron)
+int[int] order1=[1]; // for node based fields (savevtk interpolates at nodes)
+
+FEspace(Th,fetype1,vec1)
+FEspace(Th,P1,scal)
+FEspace(Th,P1,vec);
+
+FEspace(Th,P0,scal)
+FEspace(Th,P0,vec1)
+FEspace(Th,P0,vec2)
+FEspace(Th,P0,tens2);
+FEspace(Th,P0,tens22);
+
+FEspace(Thper,P1,scal)
+FEspace(Thper,fetype1,vec1);
+FEspace(Thper,P1,vec);
+
+
+if(bcheckboundaries)
+	for(int i=0;i<nbnd;++i)
+	{
+	varf vonbnd(a,aa)=on(bnd[i],a=1);
+	ThP1scal bndP1scal;
+	bndP1scal[] = vonbnd(0,ThP1scal, tgv=1);
+	plot(bndP1scal,fill=1,value=1,wait=1,cmm="boundary "+bndname[i]);
+	}
+
+SetRegion(Th,rotor,bplotregion);
+SetRegion(Th,magnet,bplotregion);
+SetRegion(Th,stator,bplotregion);
+SetRegion(Th,air,bplotregion);
+
+SetRegion(Th,phaseplus,bplotregion);
+SetRegion(Th,phaseminus,bplotregion);
+SetRegion(Th,coil,bplotregion);
+
+ThP0scal lambda,mu; //Lame coefficients (elastic properties of materials)
+ThP1vec vec(u),vec(uu),vec(f),vec(udir);// vector fiels for the displacement, the force density ...
+ThP0tens2 tens2(epsilon),tens2(sigma1); //elastic strain and stress
+ThP0tens2 tens2(tm0); // Maxwell stress tensor without magnetostriction
+ThP0tens2 tens2(tm1); // Maxwell stress tensor with constant material line circulation of M
+ThP0tens2 tens2(tm2); // Maxwell stress tensor with constant material surface flux of M
+ThP0tens2 tens2(tm3); // Maxwell stress tensor with constant magnetic moment
+
+ThP0tens22 tens22(C); //stiffness tensor
+
+ThP0vec2 vec(Br);
+vec2(Br) = vecBr;
+
+ThP0scal nu = nuiron*(regstator[0]+regrotor[0])+nupm*(regmagnet[0]+regmagnet[1])+nu0*regair[0]
+              +nucoil*(regphaseplus[0]+regphaseplus[1]+regphaseplus[2]
+                     + regphaseminus[0]+regphaseminus[1]+regphaseminus[2]);
+mu = muiron*(regstator[0]+regrotor[0])+mupm*(regmagnet[0]+regmagnet[1])+mu0*regair[0]
+              +mucoil*(regphaseplus[0]+regphaseplus[1]+regphaseplus[2]
+                     + regphaseminus[0]+regphaseminus[1]+regphaseminus[2]);
+
+currentdensity(0,minus,bplotcoils)
+currentdensity(0,plus,bplotcoils)
+currentdensity(1,minus,bplotcoils)
+currentdensity(1,plus,bplotcoils)
+currentdensity(2,minus,bplotcoils)
+currentdensity(2,plus,bplotcoils)
+
+ThP0vec1 vec1(JJ)=vec1(I1*Jplus0)+vec1(I1*Jminus0)+vec1(I1*Jplus1)+vec1(I1*Jminus1);
+
+varf vonsperio2(u,uu)=on(bnd[ibndname["sperio2"]],u=1);
+ThperP1scal onsperio2;
+onsperio2[]=vonsperio2(0,ThperP1scal,tgv=1);
+meshnd Thtrunc= trunc(Thper,onsperio2>0);
+plot(Th,Thtrunc,wait=1,cmm="Th and trunc mesh");
+
+FEspace(Thtrunc,fetype1,vec1)
+//FEspace(Thtrunc,P1,vec);
+
+matrix M;
+cout << "compute interpolation matrix..." << endl;
+cout<< "interp 1" << endl;
+matrix M1=interpolate(Thtruncfetype1vec1,Thperfetype1vec1,inside=true,t=true);
+real threshold=0.5;
+CleanSparseMatrix(M1,threshold);
+cout<< "interp 2" << endl;
+matrix M2=interpolate(Thtruncfetype1vec1,Thfetype1vec1,inside=true);
+CleanSparseMatrix(M2,threshold);
+cout<< "end interp" << endl;
+M = M1*M2;
+CleanSparseMatrix(M,threshold);
+
+real[int] fetype1vec1dircoef=vecff(1,1,1);
+FlagDofBoundary(Th,fetype1,vec1,sBn0,fetype1vec1dircoef,Bn0)
+
+SubFEspace(real,Th,fetype1,vec1,magstat)
+AddDirichlet(Th,fetype1,vec1,magstat,flagdofboundaryBn0)
+Thfetype1vec1 vec1(adir);
+vec1firstcomp(adir)[](:)=0; //define a value for each dof invovled in the Dirichlet boundary conditions
+SetDirichletValue(real,Th,fetype1,vec1,magstat,vec1firstcomp(adir)[])
+SetDirichletFlag(real,Th,fetype1,vec1,magstat)
+
+Thfetype1vec1 vec1(a);
+varf magstat(vec1(a),vec1(aa)) = intnd(Th)(nu*rot2(a)'*rot2(aa))
+										- intnd(Th)(vec1(JJ)'*vec1(aa))
+										- intnd(Th)(nu*vec2(Br)'*rot2(aa))
+										;
+
+//varf magstat(vec1(a),vec1(aa)) = intnd(Th)(rot2(a)'*rot2(aa))
+//										- intnd(Th)(vec1(JJ)'*vec1(aa))
+//										- intnd(Th)(vec2(Br)'*rot2(aa))
+//										;
+
+if(1){
+	cout << "build finite element system" << endl;
+	matrix AA=magstat(Thfetype1vec1,Thfetype1vec1); //Matriz AA somente para a malha TH
+	real[int] BB=magstat(0,Thfetype1vec1);
+	BB = -BB;
+	cout << "end build finite element system" << endl; // Matriz BB somente para a malha Th - Termo fonte
+	//cout << "teste = " << AA << endl;
+
+	if(bperiodicity){
+		int[int,int] flagiso0(M.n,1);// be careful with tables [int,int], they must be fully initialized manually
+		// the definition of "iso dofs" must be a table of type int[int,int]
+		// here, there is no "iso dofs" condition, but we must define a minimum table with an "iso dofs" condition aplied to only one dof
+		flagiso0(:,0)=0;
+		flagiso0(0,0)=1;
+
+		real[int] connectcoef(M.n);
+		connectcoef(:)=1;
+
+		cout << "build extension matrix" << endl;
+		ExtensionMatrix2(real, flagiso0, M, connectcoef,Thfetype1vec1magstatdirflag,magstat)
+		//ExtensionMatrix(real, flagiso0, M, connectcoef,magstat)
+		cout << "end build extension matrix" << endl;
+
+		cout << "build restricted (iso and periodicity) and reduced (Dirichlet and support) system" << endl;
+		matrix Atemp1=AA*MatExtmagstat;
+		matrix AArest=MatExtmagstat'*Atemp1; //restricted matrix
+		real[int] BBrest=MatExtmagstat'*BB; //restricted RHS
+
+		real[int] restdir=MatExtmagstat'*Thfetype1vec1magstatdirflag; // restricted flag for Dirichlet condition
+		int[int] intrestdir(restdir.n);
+		for(int i=0;i<restdir.n;++i) if(abs(restdir(i))>0.5) intrestdir(i)=1; else intrestdir(i)=0; /*here node element have all the same orientation, for other type of element, even for a periodic mesh, we may note have the same orientation =>  use abs(). the abs() is also necessary when anti-periodicity is considered (connectcoef=-1)*/
+		/*the technique may not work for non-periodic meshes where the interpolation involves various elements...*/
+		real[int] restdirvalue=MatExtmagstat'*Thfetype1vec1magstatdirvalue; // restricted value for Dirichlet condition
+
+		RedSysDirichlet(real, AArest, BBrest, intrestdir, intrestdir, restdirvalue)
+		/*RedSysDirichlet creates the reduced system */
+
+		real[int] solper1(BBrestred.n);
+		set(AArestred,solver=CG);
+		//set(AArestred,solver=UMFPACK);
+
+		cout << " end build restricted (iso and periodicity) and reduced (Dirichlet and support) system" << endl;
+
+		cout <<"solve restricted and reduced system" << endl;
+		solper1=AArestred^-1*BBrestred;
+		cout <<"end solve restricted and reduced system" << endl;
+
+		cout <<"span restricted and reduced system solution to original system" << endl;
+		real[int] solper2(BBrest.n);
+		solper2=solper1(AArestspandof); //span the solution to the original system
+
+		real[int] tempsoldir(AArestinddirdof.n);
+		tempsoldir=restdirvalue(AArestinddirdof);
+		solper2(AArestinddirdof)=tempsoldir; // corrects the values on the Dirichlet dofs
+
+		vec1firstcomp(a)[]=MatExtmagstat*solper2; //extends the solution to the original problem
+		cout <<"span restricted and reduced system solution to original system" << endl;
+	}
+	else{
+		RedSysDirichlet(real, AA, BB, Thfetype1vec1magstatdirflag, Thfetype1vec1magstatdirflag, Thfetype1vec1magstatdirvalue)
+		real[int] xx(AAred.n);
+		set(AAred,solver=CG);
+		//set(AAred,solver=UMFPACK);
+		xx=AAred^-1*BBred; //resolution of the reduced system
+		vec1firstcomp(a)[]=xx(AAspandof); // span the solution to the original system (be careful, the Dirichlet dofs are assigned the value of xx(0))
+
+		real[int] tempsoldir(AAinddirdof.n);
+		tempsoldir=Thfetype1vec1magstatdirvalue(AAinddirdof);
+		vec1firstcomp(a)[](AAinddirdof)=tempsoldir; // corrects the values on the Dirichlet dofs
+	}
+}
+
+ThP0vec2 vec2(b);
+vec2(b)=rot2(a);
+ThP0vec2 vec2(h),vec2(m);
+vec2(h) = nu*(vec2(b)-vec2(Br));
+//vec2(h) = nu*(vec2(b)-vec2(Br))*((regmagnet[0]+regmagnet[1]))+nu*vec2(b)*(regstator[0]+regrotor[0]+regair[0]+regphaseplus[0]+regphaseplus[1]+regphaseplus[2]
+//                     + regphaseminus[0]+regphaseminus[1]+regphaseminus[2]);
+vec2(m) = nu0*(vec2(Br));
+//vec2(m) = nu0*vec2(Br)*((regmagnet[0]+regmagnet[1]))+nu0*vec2(h)*(mu-mu0)*(regstator[0]+regrotor[0]+regair[0]+regphaseplus[0]+regphaseplus[1]+regphaseplus[2]
+//                   + regphaseminus[0]+regphaseminus[1]+regphaseminus[2]);
+//vec2(m) = nu0*vec2(h)*(mu-u0)+nu0*vec2(Br);
+
+if(false){ //  Save results
+	savevtk(DIRres+"A.vtu",Th,a,order=order1,dataname="a");
+	savevtk(DIRres+"B.vtu",Th,[bx,by,0],order=order0,dataname="b");
+	savevtk(DIRres+"M.vtu",Th,[hx,hy,0],order=order0,dataname="m");
+	savevtk(DIRres+"H.vtu",Th,[mx,my,0],order=order0,dataname="h");
+}
+
+if(false){ // Plot data
+	plot(vec1(JJ),wait=1,value=1,fill=1,cmm="JJ");
+	plot(vec(Br),wait=1,fill=1,value=1,cmm="Br");
+	plot(vec(b),wait=1,fill=1,value=1,cmm="B");
+	plot(vec(h),wait=1,fill=1,value=1,cmm="B");
+	plot(vec(m),wait=1,fill=1,value=1,cmm="B");
+}

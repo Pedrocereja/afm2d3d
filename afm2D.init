@@ -10,9 +10,15 @@ hrot = 0.02; 		// Comp. axial do rotor
 p = 14; 			// Pares de polos
 alfa = 0.72;
 
-pg = 0.25*mm; // Densidade de malha no entreferro 0.24*mm
-pfe = 1*mm; // Densidade de malha no ferro 1*mm
-pim = 1*mm; // Densidade de malha no imã 1*mm
+zair = 0.04;
+pair = 5*mm;
+
+pg = 2*mm; // Densidade de malha no entreferro antes 2mm
+pfe = 2*mm; // Densidade de malha no ferro antes 2mm
+pim = 2*mm; // Densidade de malha no imã antes 2mm
+pair = 10*mm; // Densidade das camadas de ar
+riair = 0.05; // Espessura do raio interno
+zair = 0.04;
 
 // Número de regiões físicas
 ESTATOR = 5001;

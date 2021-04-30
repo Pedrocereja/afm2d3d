@@ -1,4 +1,4 @@
-Include "afm2D.init";
+Include "../afm2D.init";
 
 pi = 3.14;
 bp =  (alfa*pi*rm)/p;		// Comprimento do imã

@@ -1,4 +1,4 @@
-Include "afm3D.init";
+Include "../afm3D.init";
 
 pi = 3.14;
 theta = theta/2;

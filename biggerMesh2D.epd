@@ -38,7 +38,7 @@ IFMACRO(DIM,2)
 	include "afm2D.init"
 	include "../include/MACROS2D.edp"
 	// directory where the results should be saved
-	string DIRres="results/2D/Pedro/";
+	string DIRres="results/2D/";
 
 	mesh Th = gmshload("biggerMesh2D.msh");
 	plot(Th,wait=1);
@@ -322,7 +322,7 @@ vec2(m) = nu0*(vec2(Br));
 //                   + regphaseminus[0]+regphaseminus[1]+regphaseminus[2]);
 //vec2(m) = nu0*vec2(h)*(mu-u0)+nu0*vec2(Br);
 
-if(false){ //  Save results
+if(true){ //  Save results
 	savevtk(DIRres+"A.vtu",Th,a,order=order1,dataname="a");
 	savevtk(DIRres+"B.vtu",Th,[bx,by,0],order=order0,dataname="b");
 	savevtk(DIRres+"M.vtu",Th,[hx,hy,0],order=order0,dataname="m");

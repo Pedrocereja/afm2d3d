@@ -8,6 +8,8 @@ load "medit"
 load "msh3"
 
 macro DIM 3 // /* 2=2D , 3=3D */
+macro COMP2D3D 0 // /* Nodal force comparision between 2D and 3D case, 1 if true */
+macro ELAST 1 // /* Set 1 to perform the elasticity simulation */
 
 bool bcheckboundaries=false; // set to "true" to check the boundary regions
 bool bplotregion=false; // set to "true" to plot the physical regions
@@ -20,7 +22,6 @@ bool bcomputeinterp=1;
 real Itot = 474.67; // total current in coils section (A) (in the considered configuration, phase U (or 0) has null current, and phase V (or 1) and W (or 2) carry the same current (up to the sign))
 real Jimp = 7.8e5; // Imposed current density
 real I1=Itot;
-//real I2=-I1;
 
 real Br = 1.17; // remanent induction of the magnets (T)
 
@@ -73,16 +74,13 @@ IFMACRO(DIM,2)
 	// external plane boundary pependicular to the machine axis
 	ibnd++;
 	bnd[ibnd] = [CAMSARS];
-	//bnd[ibnd] = [ROTORL43];
 	bndname[ibnd]="szmax";
 	// periodicity planes (parallel to and containing the axis of the machine)
 	ibnd++;
 	bnd[ibnd] = [ESTATORL2,WML16,GAP1L23,GAP23L35,ROTORL41,CAMSARLD];
-	//bnd[ibnd] = [ESTATORL2,WML16,GAP1L23,GAP23L35,ROTORL41];
 	bndname[ibnd]="sperio1";
 	ibnd++;
 	bnd[ibnd] = [ESTATORL3,VPL10,GAP1L24,GAP21L30,ROTORL42,CAMSARLE];
-	//bnd[ibnd] = [ESTATORL3,VPL10,GAP1L24,GAP21L30,ROTORL42];
 	bndname[ibnd]="sperio2";
 
 	int[string] ibndname; //to get the boundary index by name
@@ -99,20 +97,13 @@ IFMACRO(DIM,2)
 	stator[0]=[ESTATOR];
 
 	air[0]=[GAP1,GAP21,GAP22,GAP23,CAMSAR]; //2D mesh
-	//air[0]=[GAP1,GAP21,GAP22,GAP23]; //2D mesh
 
 	int[int][int] phaseplus(3),coil(6);
-	//phaseplus[0]=[UPLUS];
-	//phaseplus[1]=[VPLUS];
-	//phaseplus[2]=[WPLUS];
 	phaseplus[0]=[UPLUS];
 	phaseplus[1]=[VPLUS];
 	phaseplus[2]=[WPLUS];
 
 	int[int][int] phaseminus(3);
-	//phaseminus[0]=[UMINUS];
-	//phaseminus[1]=[VMINUS];
-	//phaseminus[2]=[WMINUS];
 	phaseminus[0]=[UMINUS];
 	phaseminus[1]=[VMINUS];
 	phaseminus[2]=[WMINUS];
@@ -189,31 +180,25 @@ IFMACRO(DIM,3)
 	int ibnd=0;
 
 	// internal radius of the machine
-	//bnd[ibnd] = [20084,20085,20086,20087,20088,20089,20090,20091,20092,20093,20219,20220,20221,20222,20223,20224,20225,20226,20227,20228,20311,20312,20313,20314,20315,20316,20317,20318,20319,20320,20426,20427,20428,20429,20430,20431,20432,20433,20434,20435];
 	bnd[ibnd] = [20776,20777,20778,20779,20780,20781,20782,20783,20784,20785,20807,20808,20809,20810,20811,20812,20813,20814,20815,20816,20838,20839,20840,20841,20842,20843,20844,20845,20846,20847,20869,20870,20871,20872,20873,20874,20875,20876,20877,20878,20900,20901,20902,20903,20904,20905,20906,20907,20908,20909];
 	bndname[ibnd]="srint";
 	// external radius of the machine
 	ibnd++;
-	//bnd[ibnd] = [20146,20147,20148,20149,20150,20151,20152,20153,20154,20155,20260,20261,20262,20263,20264,20265,20266,20267,20268,20269,20352,20353,20354,20355,20356,20357,20358,20359,20360,20361,20457,20458,20459,20460,20461,20462,20463,20464,20465,20466];
 	bnd[ibnd] = [20982,20983,20984,20985,20986,20987,20988,20989,20990,20991,21013,21014,21015,21016,21017,21018,21019,21020,21021,21022,21044,21045,21046,21047,21048,21049,21050,21051,21052,21053,21075,21076,21077,21078,21079,21080,21081,21082,21083,21084,21106,21107,21108,21109,21110,21111,21112,21113,21114,21115];
 	bndname[ibnd]="srext";
 	//symmetry plane (mid plane of the stator, perpendicular to the axis of the machine)
 	ibnd++;
-	//bnd[ibnd] = [20021,20022,20023,20024,20025,20026,20027,20028,20029,20030,20126,20127,20128,20129,20130,20131,20132,20133,20134,20135,20188,20189,20190,20191,20192,20193,20194,20195,20196,20197];
 	bnd[ibnd] = [20021,20022,20023,20024,20025,20026,20027,20028,20029,20030,20126,20127,20128,20129,20130,20131,20132,20133,20134,20135,20188,20189,20190,20191,20192,20193,20194,20195,20196,20197,20930,20931,20932,20933,20934,20935,20936,20937,20938,20939,20755,20756,20757,20758,20759,20760,20761,20762,20763,20764];
 	bndname[ibnd]="szmin";
 	// external plane boundary pependicular to the machine axis
 	ibnd++;
-	//bnd[ibnd] = [20436,20437,20438,20439,20440,20441,20442,20443,20444,20445,20467,20468,20469,20470,20471,20472,20473,20474,20475,20476,20488,20489,20490,20491,20492,20493,20494,20495,20496,20497];
 	bnd[ibnd] = [20693,20694,20695,20696,20697,20698,20699,20700,20701,20702,20662,20663,20664,20665,20666,20667,20668,20669,20670,20671,20631,20632,20633,20634,20635,20636,20637,20638,20639,20640,21085,21086,21087,21088,21089,21090,21091,21092,21093,21094,20910,20911,20912,20913,20914,20915,20916,20917,20918,20919];
 	bndname[ibnd]="szmax";
 	// periodicity planes (parallel to and containing the axis of the machine)
 	ibnd++;
-	//bnd[ibnd] = [20041,20073,20094,20105,20156,20167,20208,20249,20290,20331,20372,20393,20415,20446,20477];
 	bnd[ibnd] = [20950,20971,21002,21033,21064,21095,20041,20073,20094,20105,20156,20167,20208,20249,20290,20331,20372,20393,20415,20446,20477,20600,20589,20578,20712,20682,20651,20724,20765,20796,20827,20858,20889];
 	bndname[ibnd]="sperio1";
 	ibnd++;
-	//bnd[ibnd] = [20042,20083,20104,20115,20166,20177,20218,20259,20300,20341,20382,20403,20425,20456,20487];
 	bnd[ibnd] = [20042,20083,20104,20115,20166,20177,20218,20259,20300,20341,20382,20403,20425,20456,20487,20960,20981,21012,21043,21074,21105,20588,20599,20610,20661,20692,20722,20734,20775,20806,20837,20868,20899];
 	bndname[ibnd]="sperio2";
 
@@ -261,13 +246,7 @@ IFMACRO(DIM,3)
 	phaseminus[1]=[FASEVM];
 	phaseminus[2]=[FASEWM];
 
-	int[int][int] coil(6);/*
-	coil[0]=[UPLUS];
-	coil[1]=[VPLUS];
-	coil[2]=[WPLUS];
-	coil[3]=[UMINUS];
-	coil[4]=[VMINUS];
-	coil[5]=[WMINUS];*/
+	int[int][int] coil(6);
 	coil[0] = [FASEUP];
 	coil[1] = [FASEVP];
 	coil[2] = [FASEWP];
@@ -384,11 +363,6 @@ varf magstat(vec1(a),vec1(aa)) = intnd(Th)(nu*rot2(a)'*rot2(aa))
 										- intnd(Th)(nu*vec2(Br)'*rot2(aa))
 										;
 
-//varf magstat(vec1(a),vec1(aa)) = intnd(Th)(rot2(a)'*rot2(aa))
-//										- intnd(Th)(vec1(JJ)'*vec1(aa))
-//										- intnd(Th)(vec2(Br)'*rot2(aa))
-//										;
-
 if(1)
 {
 
@@ -397,7 +371,6 @@ matrix AA=magstat(Thfetype1vec1,Thfetype1vec1); //Matriz AA somente para a malha
 real[int] BB=magstat(0,Thfetype1vec1);
 BB = -BB;
 cout << "end build finite element system" << endl; // Matriz BB somente para a malha Th - Termo fonte
-//cout << "teste = " << AA << endl;
 
 if(bperiodicity)
 {
@@ -466,16 +439,10 @@ vec1firstcomp(a)[](AAinddirdof)=tempsoldir; // corrects the values on the Dirich
 }
 }
 
-ThP0vec2 vec2(b);
+ThP0vec2 vec2(b),vec2(h),vec2(m);
 vec2(b)=rot2(a);
-ThP0vec2 vec2(h),vec2(m);
 vec2(h) = nu*(vec2(b)-vec2(Br));
-//vec2(h) = nu*(vec2(b)-vec2(Br))*((regmagnet[0]+regmagnet[1]))+nu*vec2(b)*(regstator[0]+regrotor[0]+regair[0]+regphaseplus[0]+regphaseplus[1]+regphaseplus[2]
-//                     + regphaseminus[0]+regphaseminus[1]+regphaseminus[2]);
 vec2(m) = nu0*(vec2(Br));
-//vec2(m) = nu0*vec2(Br)*((regmagnet[0]+regmagnet[1]))+nu0*vec2(h)*(mu-mu0)*(regstator[0]+regrotor[0]+regair[0]+regphaseplus[0]+regphaseplus[1]+regphaseplus[2]
-//                   + regphaseminus[0]+regphaseminus[1]+regphaseminus[2]);
-//vec2(m) = nu0*vec2(h)*(mu-u0)+nu0*vec2(Br);
 
 IFMACRO(DIM,2)
 	savevtk(DIRres+"A.vtu",Th,a,order=order1,dataname="a");
@@ -535,68 +502,19 @@ IFMACRO(DIM,3)
 		file1 << ang << " " << Babs[i] << " " << Brmx[i] << " " << Brmy[i] << " " << Brmz[i]  << endl;
 	}
 ENDIFMACRO
-/*
-IFMACRO(DIM,3)
-	[tens2comp(tm0)] = [hx*bx,hy*by,hz*bz,0.5*(hy*bz+hz*by),0.5*(hx*bz+hz*bx),0.5*(hx*by+bx*hy)]-0.5*nu0*[bx*bx+by*by+bz*bz,bx*bx+by*by+bz*bz,bx*bx+by*by+bz*bz,0,0,0];
-	[tens2comp(tm1)] = [tens2comp(tm0)]+[bx*mx,by*my,bz*mz,0.5*(by*mz+bz*my),0.5*(bx*mz+bz*mx),0.5*(bx*my+by*mx)];
-	[tens2comp(tm2)] = [tens2comp(tm0)]-[bx*mx,by*my,bz*mz,0.5*(by*mz+bz*my),0.5*(bx*mz+bz*mx),0.5*(bx*my+by*mx)]+[mx*bx+my*by+mz*bz,mx*bx+my*by+mz*bz,mx*bx+my*by+mz*bz,0,0,0];
-	[tens2comp(tm3)] = [tens2comp(tm0)]+[mx*bx+my*by+mz*bz,mx*bx+my*by+mz*bz,mx*bx+my*by+mz*bz,0,0,0];
-
-ENDIFMACRO
-
-int[int] regrotormag = [rotor[0],magnet[0],magnet[1]];
-
-varf forcemag(vec(u),vec(uu)) =  intnd(Th)(-(regrotormag)*T2grads(tm0,uu));
-ThP1vec vec(forct),vec(forctcyl);
-forctx[]=forcemag(0,ThP1vec);
-//FlagDofRegion(Th,P1,vec,regrotormag,usupportcoef,ima1P1vec)
-
-int ncomp = (forctx.n/3);
-
-real[int] compx(ncomp), compy(ncomp), compz(ncomp);
-int ii = 0;
-ofstream fileforc1("fileforctm0.txt");
-for (int i=0; i<ncomp; i++){
-//	compx[i] = flagdofregionima1P1vec[i+2*i]*forctx[][i+2*i];
-	compx[i] = forctx[][i+2*i];
-//	compy[i] = flagdofregionima1P1vec[i+2*i+1]*forctx[][i+2*i+1];
-	compy[i] = forctx[][i+2*i+1];
-//	compz[i] = flagdofregionima1P1vec[i+2*i+2]*forctx[][i+2*i+2];
-	compz[i] = forctx[][i+2*i+2];
-	fileforc1 << compx[i] << " " << compy[i] << " " << compz[i]  << endl;
-}
-
-real forcx = compx.sum;
-real forcy = compy.sum;
-real forcz = compz.sum;
-real forcgima = sqrt(forcx^2+forcy^2+forcz^2);
-cout << "coef = " << forcx << endl;
-cout << "coef = " << forcy << endl;
-cout << "coef = " << forcz << endl;
-cout << "forcglob = " << forcgima << endl;
-
-savevtk(DIRres+"forc"+Stringification(tm0)+".vtu",Th,[forctx,forcty,forctz],order=order1,dataname=Stringification(tm0));
-int[int] regteste = [20302,20303,20304];
-real surf=int2d(Th,regteste[0])(1);
-real surf2=int2d(Th,regteste[1])(1);
-real surf3=int2d(Th,regteste[2])(1);
-cout << "tt = " << surf << endl;
-cout << "tt = " << surf2 << endl;
-cout << "tt = " << surf3 << endl; */
 
 IFMACRO(DIM,2)
-	[tens2comp(tm0)] = [hx*bx,hy*by,0.5*(hx*by+bx*hy)]-0.5*nu0*[bx*bx+by*by,bx*bx+by*by,0];
-	[tens2comp(tm1)] = [tens2comp(tm0)]+[bx*mx,by*my,0.5*(bx*my+by*mx)];
-	[tens2comp(tm2)] = [tens2comp(tm0)]-[bx*mx,by*my,0.5*(bx*my+by*mx)]+[mx*bx+my*by,mx*bx+my*by,0];
-	[tens2comp(tm3)] = [tens2comp(tm0)]+[mx*bx+my*by,mx*bx+my*by,0];
+	tens2(tm0) = [hx*bx,hy*by,0.5*(hx*by+bx*hy)]-0.5*nu0*[bx*bx+by*by,bx*bx+by*by,0];
+	tens2(tm1) = tens2(tm0)+[bx*mx,by*my,0.5*(bx*my+by*mx)];
+	tens2(tm2) = tens2(tm0)-[bx*mx,by*my,0.5*(bx*my+by*mx)]+[mx*bx+my*by,mx*bx+my*by,0];
+	tens2(tm3) = tens2(tm0)+[mx*bx+my*by,mx*bx+my*by,0];
 ENDIFMACRO
 
 IFMACRO(DIM,3)
-	[tens2comp(tm0)] = [hx*bx,hy*by,hz*bz,0.5*(hy*bz+hz*by),0.5*(hx*bz+hz*bx),0.5*(hx*by+bx*hy)]-0.5*nu0*[bx*bx+by*by+bz*bz,bx*bx+by*by+bz*bz,bx*bx+by*by+bz*bz,0,0,0];
-	[tens2comp(tm1)] = [tens2comp(tm0)]+[bx*mx,by*my,bz*mz,0.5*(by*mz+bz*my),0.5*(bx*mz+bz*mx),0.5*(bx*my+by*mx)];
-	[tens2comp(tm2)] = [tens2comp(tm0)]-[bx*mx,by*my,bz*mz,0.5*(by*mz+bz*my),0.5*(bx*mz+bz*mx),0.5*(bx*my+by*mx)]+[mx*bx+my*by+mz*bz,mx*bx+my*by+mz*bz,mx*bx+my*by+mz*bz,0,0,0];
-	[tens2comp(tm3)] = [tens2comp(tm0)]+[mx*bx+my*by+mz*bz,mx*bx+my*by+mz*bz,mx*bx+my*by+mz*bz,0,0,0];
-
+	tens2(tm0) = [hx*bx,hy*by,hz*bz,0.5*(hy*bz+hz*by),0.5*(hx*bz+hz*bx),0.5*(hx*by+bx*hy)]-0.5*nu0*[bx*bx+by*by+bz*bz,bx*bx+by*by+bz*bz,bx*bx+by*by+bz*bz,0,0,0];
+	tens2(tm1) = tens2(tm0)+[bx*mx,by*my,bz*mz,0.5*(by*mz+bz*my),0.5*(bx*mz+bz*mx),0.5*(bx*my+by*mx)];
+	tens2(tm2) = tens2(tm0)-[bx*mx,by*my,bz*mz,0.5*(by*mz+bz*my),0.5*(bx*mz+bz*mx),0.5*(bx*my+by*mx)]+[mx*bx+my*by+mz*bz,mx*bx+my*by+mz*bz,mx*bx+my*by+mz*bz,0,0,0];
+	tens2(tm3) = tens2(tm0)+[mx*bx+my*by+mz*bz,mx*bx+my*by+mz*bz,mx*bx+my*by+mz*bz,0,0,0];
 ENDIFMACRO
 
 
@@ -613,9 +531,13 @@ IFMACRO(DIM,2)
 	forctx[]./=nodesurfx[];
 	savevtk(DIRres+"densforc"+Stringification(t0)+".vtu",Th#rotor#magnet,[forctx,forcty,0],order=order1,dataname=Stringification(denst0));
 	//
+	forcnod(,,tm2);
+
 ENDIFMACRO
 
-IFMACRO(DIM,3)
+
+IFMACRO(COMP2D3D,1)
+
 	macro R sqrt(x*x+y*y) //
 
 	varf nodevol(vec(u),vec(uu)) =  intnd(Th)(uux+uuy+uuz);
@@ -655,37 +577,256 @@ IFMACRO(DIM,3)
 	savevtk(DIRres+"f23d.vtu",Th23d,[f23dx,f23dy,f23dz],order=order0,dataname="f23d");
 
 	//
+	forcnod(,,tm2);
+
 ENDIFMACRO
 
-forcnod(,,tm2); // Choose between (rotor,magnet) or (stator,coil)
+
+// ELASTICITY - Only calculated for the 3D case
+
+IFMACRO(DIM,3)
+
+IFMACRO(ELAST,1)
+
+FEspace(Thtrunc,P1,vec);
+
+matrix MM;
+cout << "compute interpolation matrix..." << endl;
+cout<< "interp 1" << endl;
+matrix M11=interpolate(ThtruncP1vec,ThperP1vec,inside=true,t=true);
+CleanSparseMatrix(M11,threshold);
+cout<< "interp 2" << endl;
+matrix M22=interpolate(ThtruncP1vec,ThP1vec,inside=true);
+CleanSparseMatrix(M22,threshold);
+cout<< "end interp" << endl;
+MM = M11*M22;
+CleanSparseMatrix(MM,threshold);
+
+if(bcheckperiodicitydofs)
+{
+ux[](:)=1;
+ThperP1vec vec(uper);
+uperx[]=MM*ux[];
+ux[]=uperx[];
+plotveccomp2(u,uper,"nodes involved in the connection (periodicity)");
+}
+
+macro support(Th,P0scal,rotor,magnet)
+
+int[int] rotor#magnet(rotor.n);
+for(int i=0;i<rotor.n;i++)
+rotor#magnet = [rotor[i]];
+for(int i=0;i<magnet.n;i++)
+rotor#magnet = [rotor#magnet,magnet[i]];
+
+Th#P0scal reg#rotor#magnet;
+for(int i=0;i<rotor.n;i++)
+reg#rotor#magnet = reg#rotor[i];
+for(int i=0;i<magnet.n;i++)
+reg#rotor#magnet = reg#rotor#magnet+reg#magnet[i];
+
+FlagDofRegion(Th,P1,vec,rotor#magnet,usupportcoef,rotor#magnet#P1vec)
+if(bchecksupport)
+{
+ThP1vec vec(dofsupport);
+dofsupportx[]=Int2Real(flagdofregion#rotor#magnet#P1vec);
+plotveccomp(dofsupport," ");
+}
+
+// EOM
+
+support(Th,P0scal,rotor,magnet); // Choose between (rotor,magnet) or (stator,coil)
+
+FlagDofBoundary(Th,P1,vec,sBn02,udircoef,rintP1vec)
+if(bchecksupport)
+{
+ThP1vec vec(dofdir);
+dofdirx[]=Int2Real(flagdofboundaryrintP1vec);
+plotveccomp(dofdir," ");
+}
+
+macro support2(rotor,magnet)
+
+SubFEspace(real,Th,P1,vec,elast)
+AddDirichlet(Th,P1,vec,elast,flagdofboundaryrintP1vec)
+int[int] notflagdofregion#rotor#magnet#P1vec(flagdofregion#rotor#magnet#P1vec.n);
+notflagdofregion#rotor#magnet#P1vec(:)=1;
+notflagdofregion#rotor#magnet#P1vec-=flagdofregion#rotor#magnet#P1vec;
+AddDirichlet(Th,P1,vec,elast,notflagdofregion#rotor#magnet#P1vec)
+// EOM
+
+support2(rotor,magnet); // Choose between (rotor,magnet) or (stator,coil)
+
+udirx[](:)=0; //define a value for each dof involved in the Dirichlet boundary conditions
+SetDirichletValue(real,Th,P1,vec,elast,udirx[])
+SetDirichletFlag(real,Th,P1,vec,elast)
+if(bchecksupport)
+{
+ThP1vec vec(dofdir);
+dofdirx[]=ThP1vecelastdirflag;
+plotveccomp(dofdir," ");
+}
+
+macro defconstant(EYoung1,nuPoisson1,rotor,EYoung2,nuPoisson2,magnet)
+for(int i=0;i<rotor.n;i++){
+mu= (EYoung1/(2*(1+nuPoisson1)))*(reg#rotor[i]);
+lambda = (EYoung1*nuPoisson1/((1+nuPoisson1)*(1-2*nuPoisson1)))*(reg#rotor[i]);}
+for(int i=0;i<magnet.n;i++){
+mu = mu+(EYoung1/(2*(1+nuPoisson1)))*(reg#magnet[i]);
+lambda = lambda+(EYoung2*nuPoisson2/((1+nuPoisson2)*(1-2*nuPoisson2)))*(reg#magnet[i]);}
+if(bplanestress)
+	for(int i=0;i<rotor.n;i++){
+	lambda = (EYoung1*nuPoisson1/(1-nuPoisson1^2))*(reg#rotor[i]);}
+	for(int i=0;i<magnet.n;i++){
+	lambda = lambda+(EYoung2*nuPoisson2/(1-nuPoisson2^2))*(reg#magnet[i]);} 
+// EOM
+
+real EYoungf=200e9; //typical value for Iron and magnet
+real nuPoissonf=0.3; //typical value for Iron and magnet
+real EYoungc=140e9; //typical value for copper
+real nuPoissonc=0.35; //typical value for copper
+
+defconstant(EYoungf,nuPoissonf,rotor,EYoungf,nuPoissonf,magnet);  // Choose between (rotor,magnet) or (stator,coil)
+
+IsotropicStiffnessLame(C,lambda,mu);
+
+macro varfelast(rotor,magnet)
+varf elast(vec(u),vec(uu))=  intnd(Th)((reg#rotor#magnet)*gradsT22grads(u,C,uu))
+                          + intnd(Th)((reg#rotor#magnet)*T2grads(tm2,uu) )
+				                   ;
+// EOM
+
+varfelast(rotor,magnet);  // Choose between (rotor,magnet) or (stator,coil)
+
+cout << "build finite element system" << endl;
+matrix AA=elast(ThP1vec,ThP1vec);
+real[int] BB=elast(0,ThP1vec);
+BB = -BB;
+cout << "end build finite element system" << endl;
+
+if(bperiodicity)
+{
+int[int,int] flagiso0(MM.n,1);// be careful with tables [int,int], they must be fully initialized manually
+ // the definition of "iso dofs" must be a table of type int[int,int]
+ // here, there is no "iso dofs" condition, but we must define a minimum table with an "iso dofs" condition aplied to only one dof
+flagiso0(:,0)=0;
+flagiso0(0,0)=1;
+
+real[int] connectcoef(MM.n);
+connectcoef(:)=1;
+cout << "build extension matrix" << endl;
+ExtensionMatrix(real, flagiso0, MM, connectcoef,elast)
+cout << "end build extension matrix" << endl;
+/*
+ExtensionMatrix MatExt:
+MatExt.n=initial number of dofs, MatExt.m=reduced number of dofs (only master dofs)
+the value of a dof v_i (master or slave) is sum_j(MatExt(i,j)*vrest_j) where vrest_j is the value of master dof j (index of a master dof in the restricted set of master dofs)
+*/
+
+if(0)
+{
+for(int i=0;i<masterindelast.n;++i)
+{
+  ThP1scal tempu;
+	ux[](:)=0;
+	ux[](masterindelast(i))=1;
+	tempu=vec(u)'*vecff(1,2,3);
+	plot(tempu,wait=1,fill=1,value=1,cmm="master (1=x,2=y,3=z)");
+	real[int] temp(MatExtelast.m);
+//	ux[]./=connectcoef;
+	temp=MatExtelast'*ux[];
+	ux[]=MatExtelast*temp;
+	tempu=vec(u)'*vecff(1,2,3);
+	plot(tempu,wait=1,fill=1,value=1,cmm="master & slave (1=x,2=y,3=z)");
+}
+}
+
+cout << "build restricted (iso and periodicity) and reduced (Dirichlet and support) system" << endl;
+matrix Atemp1=AA*MatExtelast;
+matrix AArest=MatExtelast'*Atemp1; //restricted matrix
+real[int] BBrest=MatExtelast'*BB; //restricted RHS
+
+real[int] restdir=MatExtelast'*ThP1vecelastdirflag; // restricted flag for Dirichlet condition
+int[int] intrestdir(restdir.n);
+for(int i=0;i<restdir.n;++i) if(abs(restdir(i))>0.5) intrestdir(i)=1; else intrestdir(i)=0; /*here node element have all the same orientation, for other type of element, even for a periodic mesh, we may note have the same orientation =>  use abs(). the abs() is also necessary when anti-periodicity is considered (connectcoef=-1)*/
+/*the technique may not work for non-periodic meshes where the interpolation involves various elements...*/
+real[int] restdirvalue=MatExtelast'*ThP1vecelastdirvalue; // restricted value for Dirichlet condition
+
+//real[int] restdir(masterindelast.n),restdirvalue(masterindelast.n);
+//restdir=ThP1vecelastdirflag(masterindelast); // restricted flag for Dirichlet condition
+//int[int] intrestdir(restdir.n);
+//for(int i=0;i<restdir.n;++i) if(restdir(i)>0.5) intrestdir(i)=1; else intrestdir(i)=0;
+//restdirvalue=ThP1vecelastdirvalue(masterindelast); // restricted value for Dirichlet condition
+
+RedSysDirichlet(real, AArest, BBrest, intrestdir, intrestdir, restdirvalue)
+/*RedSysDirichlet creates the reduced system */
+
+real[int] solper1(BBrestred.n);
+set(AArestred,solver=CG);
+
+cout << " end build restricted (iso and periodicity) and reduced (Dirichlet and support) system" << endl;
+
+cout <<"solve restricted and reduced system" << endl;
+solper1=AArestred^-1*BBrestred;
+cout <<"end solve restricted and reduced system" << endl;
+
+cout <<"span restricted and reduced system solution to original system" << endl;
+real[int] solper2(BBrest.n);
+solper2=solper1(AArestspandof); //span the solution to the original system
+
+real[int] tempsoldir(AArestinddirdof.n);
+tempsoldir=restdirvalue(AArestinddirdof);
+solper2(AArestinddirdof)=tempsoldir; // corrects the values on the Dirichlet dofs
+ux[]=MatExtelast*solper2; //extends the solution to the original problem
+cout <<"span restricted and reduced system solution to original system" << endl;
+
+}else{
+RedSysDirichlet(real, AA, BB, ThP1vecelastdirflag, ThP1vecelastdirflag, ThP1vecelastdirvalue)
+real[int] xx(AA.n);
+set(AAred,solver=CG);
+xx=AAred^-1*BBred; //resolution of the reduced system
+ThP1scal sol;
+ux[]=xx(AAspandof); // span the solution to the original system (be careful, the Dirichlet dofs are assigned the value of xx(0))
+}
+
+plotveccomp(u,"solution")
+
+tens2(sigma1) =  T22grads(C,u);
+
+macro R sqrt(x*x+y*y) //
+macro theta atan2(y,x) //
+//ThP0vec1 vec(sigmacyl);
+
+ThP1vec vec(ur),vec(ut),vec(uz);
+vec(ur)=[x/R,y/R,0];
+vec(ut)=[-y/R,x/R,0];
+vec(uz)=[0,0,1];
+
+ThP0tens2 tens2(sigcyl);
+tens2(sigcyl)=T2inbasis(sigma1,ur,ut,uz);
+
+macro dirres(rotor,magnet,tm0)
+mesh3 Th#rotor#magnet = trunc(Th,reg#rotor#magnet>0.5);
+plot(Th#rotor#magnet,wait=1,cmm="reg"+Stringification(rotor#magnet));
+DIRres="results/3D/"+Stringification(rotor)+Stringification(magnet)+"/";
+/*savevtk(DIRres+"sigma"+Stringification(t0)+".vtu",Th#rotor#magnet,vec(sigmacyl),order=order0,dataname="sigma"+Stringification(t0));*/
+savevtk(DIRres+"sigma"+Stringification(tm0)+".vtu",Th#rotor#magnet,tens2(sigma1),order=order0,dataname="sigma"+Stringification(tm0));
+savevtk(DIRres+"sigmacyl"+Stringification(tm0)+".vtu",Th#rotor#magnet,tens2(sigcyl),order=order0,dataname="sigmacyl"+Stringification(tm0));
+//
+dirres(rotor,magnet,tm2);  // Choose between (rotor,magnet) or (stator,coil)
+
+macro forcnod(rotor,magnet,tm0)
+varf forcemag(vec(u),vec(uu)) =  intnd(Th)(-(reg#rotor#magnet)*T2grads(tm2,uu));
+ThP1vec vec(forct),vec(forctcyl);
+forctx[]=forcemag(0,ThP1vec);
+vec(forctcyl) = [(x/R)*forctx+(y/R)*forcty,-(y/R)*forctx+(x/R)*forcty,forctz];
+plotveccomp(forctcyl,"solution")
+savevtk(DIRres+"forc"+Stringification(tm0)+".vtu",Th#rotor#magnet,[forctx,forcty,forctz],order=order1,dataname=Stringification(tm0));
+savevtk(DIRres+"forccyl"+Stringification(tm0)+".vtu",Th#rotor#magnet,vec(forctcyl),order=order1,dataname=Stringification(tm0));
+//
+forcnod(rotor,magnet,tm2); // Choose between (rotor,magnet) or (stator,coil)
 
 
+ENDIFMACRO
 
-//
-//int ncomp = (forctx.n/3);
-//
-//int[int] regsupmag = [stator[0]];
-//FlagDofRegion(Th,P1,vec,regsupmag,usupportcoef,supmagP1vec);
-//
-//real[int] compx(ncomp), compy(ncomp), compz(ncomp);
-//int ii = 0;
-//ofstream fileforc1("fileforctm3.txt");
-//for (int i=0; i<ncomp; i++){
-//	compx[i] = flagdofregionrotormagnetP1vec[i+2*i]*forctx[][i+2*i];
-//	compy[i] = flagdofregionrotormagnetP1vec[i+2*i+1]*forctx[][i+2*i+1];
-//	compz[i] = flagdofregionrotormagnetP1vec[i+2*i+2]*forctx[][i+2*i+2];
-//	//compx[i] = forctx[][i+2*i];
-//	//compy[i] = forctx[][i+2*i+1];
-//	//compz[i] = forctx[][i+2*i+2];
-//	fileforc1 << compx[i] << " " << compy[i] << " " << compz[i]  << endl;
-//}
-//
-//real forcx = compx.sum;
-//real forcy = compy.sum;
-//real forcz = compz.sum;
-//real forcgima = sqrt(forcx^2+forcy^2+forcz^2);
-//cout << "coef = " << forcx << endl;
-//cout << "coef = " << forcy << endl;
-//cout << "coef = " << forcz << endl;
-//cout << "forcglob = " << forcgima << endl;
-//
+ENDIFMACRO

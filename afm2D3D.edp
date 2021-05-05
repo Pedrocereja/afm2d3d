@@ -11,12 +11,12 @@ macro DIM 3 // /* 2=2D , 3=3D */
 macro COMP2D3D 0 // /* Nodal force comparision between 2D and 3D case, 1 if true */
 macro ELAST 1 // /* Set 1 to perform the elasticity simulation */
 
-bool bcheckboundaries=false; // set to "true" to check the boundary regions
-bool bplotregion=false; // set to "true" to plot the physical regions
+bool bcheckboundaries=true; // set to "true" to check the boundary regions
+bool bplotregion=true; // set to "true" to plot the physical regions
 bool bplotcoils=false; // set to "true" to plot the mesh associated with each coil (3D) or the current density associated to each coil (2D)
 bool bperiodicity=true; // set to "true" to apply periodicity condition
 bool bcheckperiodicitydofs = false; // set to "true" to check the periodicity dofs
-bool bchecksupport=false;
+bool bchecksupport=true;
 bool bcomputeinterp=1;
 
 real Itot = 474.67; // total current in coils section (A) (in the considered configuration, phase U (or 0) has null current, and phase V (or 1) and W (or 2) carry the same current (up to the sign))
@@ -174,7 +174,7 @@ IFMACRO(DIM,3)
 	}
 	// EOM
 	// surface regions
-	int nbnd=18;
+	int nbnd=19;
 	int[int][int] bnd(nbnd);
 	string[int] bndname(nbnd);
 	int ibnd=0;
@@ -202,6 +202,10 @@ IFMACRO(DIM,3)
 	bnd[ibnd] = [20042,20083,20104,20115,20166,20177,20218,20259,20300,20341,20382,20403,20425,20456,20487,20960,20981,21012,21043,21074,21105,20588,20599,20610,20661,20692,20722,20734,20775,20806,20837,20868,20899];
 	bndname[ibnd]="sperio2";
 
+	ibnd++;
+	bnd[ibnd] = [20426,20427,20428,20429,20430,20431,20432,20433,20434,20435];
+	bndname[ibnd] = "rintrot";
+
 	//in and out surfaces for each phase winding (plus and minus)
 	int[int][int] mpio(4*3); //minus/plus in/out boundary region indexes for the 3 phases
 	int ip=0;
@@ -227,7 +231,7 @@ IFMACRO(DIM,3)
 	sBn0=[sBn0,bnd[ibndname["szmin"]]];
 	sBn0=[sBn0,bnd[ibndname["szmax"]]];
 
-	int[int] sBn02 = bnd[ibndname["srint"]];
+	int[int] sBn02 = bnd[ibndname["rintrot"]];
 	//volume regions
 	int[int][int] rotor(1), magnet(2),stator(1),air(1);
 	rotor[0]=[ROTOR];
@@ -511,12 +515,11 @@ IFMACRO(DIM,2)
 ENDIFMACRO
 
 IFMACRO(DIM,3)
-	tens2(tm0) = [hx*bx,hy*by,hz*bz,0.5*(hy*bz+hz*by),0.5*(hx*bz+hz*bx),0.5*(hx*by+bx*hy)]-0.5*nu0*[bx*bx+by*by+bz*bz,bx*bx+by*by+bz*bz,bx*bx+by*by+bz*bz,0,0,0];
+	tens2(tm0) = [hx*bx,hy*by,hz*bz,0.5*(hy*bz+hz*by),0.5*(hx*bz+hz*bx),0.5*(hx*by+bx*hy)]-0.5*nu*[bx*bx+by*by+bz*bz,bx*bx+by*by+bz*bz,bx*bx+by*by+bz*bz,0,0,0];
 	tens2(tm1) = tens2(tm0)+[bx*mx,by*my,bz*mz,0.5*(by*mz+bz*my),0.5*(bx*mz+bz*mx),0.5*(bx*my+by*mx)];
 	tens2(tm2) = tens2(tm0)-[bx*mx,by*my,bz*mz,0.5*(by*mz+bz*my),0.5*(bx*mz+bz*mx),0.5*(bx*my+by*mx)]+[mx*bx+my*by+mz*bz,mx*bx+my*by+mz*bz,mx*bx+my*by+mz*bz,0,0,0];
 	tens2(tm3) = tens2(tm0)+[mx*bx+my*by+mz*bz,mx*bx+my*by+mz*bz,mx*bx+my*by+mz*bz,0,0,0];
 ENDIFMACRO
-
 
 IFMACRO(DIM,2)
 	varf nodesurface(vec(u),vec(uu)) =  intnd(Th)(uux+uuy);
@@ -692,7 +695,7 @@ IsotropicStiffnessLame(C,lambda,mu);
 
 macro varfelast(rotor,magnet)
 varf elast(vec(u),vec(uu))=  intnd(Th)((reg#rotor#magnet)*gradsT22grads(u,C,uu))
-                          + intnd(Th)((reg#rotor#magnet)*T2grads(tm2,uu) )
+                          + intnd(Th)((reg#rotor#magnet)*T2grads(tm1,uu) )
 				                   ;
 // EOM
 
@@ -813,10 +816,10 @@ DIRres="results/3D/"+Stringification(rotor)+Stringification(magnet)+"/";
 savevtk(DIRres+"sigma"+Stringification(tm0)+".vtu",Th#rotor#magnet,tens2(sigma1),order=order0,dataname="sigma"+Stringification(tm0));
 savevtk(DIRres+"sigmacyl"+Stringification(tm0)+".vtu",Th#rotor#magnet,tens2(sigcyl),order=order0,dataname="sigmacyl"+Stringification(tm0));
 //
-dirres(rotor,magnet,tm2);  // Choose between (rotor,magnet) or (stator,coil)
+dirres(rotor,magnet,tm1);  // Choose between (rotor,magnet) or (stator,coil)
 
 macro forcnod(rotor,magnet,tm0)
-varf forcemag(vec(u),vec(uu)) =  intnd(Th)(-(reg#rotor#magnet)*T2grads(tm2,uu));
+varf forcemag(vec(u),vec(uu)) =  intnd(Th)(-T2grads(tm1,uu));
 ThP1vec vec(forct),vec(forctcyl);
 forctx[]=forcemag(0,ThP1vec);
 vec(forctcyl) = [(x/R)*forctx+(y/R)*forcty,-(y/R)*forctx+(x/R)*forcty,forctz];
@@ -824,7 +827,7 @@ plotveccomp(forctcyl,"solution")
 savevtk(DIRres+"forc"+Stringification(tm0)+".vtu",Th#rotor#magnet,[forctx,forcty,forctz],order=order1,dataname=Stringification(tm0));
 savevtk(DIRres+"forccyl"+Stringification(tm0)+".vtu",Th#rotor#magnet,vec(forctcyl),order=order1,dataname=Stringification(tm0));
 //
-forcnod(rotor,magnet,tm2); // Choose between (rotor,magnet) or (stator,coil)
+forcnod(rotor,magnet,tm1); // Choose between (rotor,magnet) or (stator,coil)
 
 
 ENDIFMACRO

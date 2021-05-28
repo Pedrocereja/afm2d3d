@@ -7,12 +7,12 @@ load "iovtk"
 load "medit"
 load "msh3"
 
-macro DIM 3 // /* 2=2D , 3=3D */
+macro DIM 2 // /* 2=2D , 3=3D */
 macro COMP2D3D 0 // /* Nodal force comparision between 2D and 3D case, 1 if true */
 macro ELAST 1 // /* Set 1 to perform the elasticity simulation */
 
-bool bcheckboundaries=true; // set to "true" to check the boundary regions
-bool bplotregion=true; // set to "true" to plot the physical regions
+bool bcheckboundaries=false; // set to "true" to check the boundary regions
+bool bplotregion=false; // set to "true" to plot the physical regions
 bool bplotcoils=false; // set to "true" to plot the mesh associated with each coil (3D) or the current density associated to each coil (2D)
 bool bperiodicity=true; // set to "true" to apply periodicity condition
 bool bcheckperiodicitydofs = false; // set to "true" to check the periodicity dofs
@@ -64,7 +64,7 @@ IFMACRO(DIM,2)
 	}
 
 	// surface regions
-	int nbnd=4;
+	int nbnd=5;
 	int[int][int] bnd(nbnd);
 	string[int] bndname(nbnd);
 	int ibnd=0;
@@ -83,13 +83,18 @@ IFMACRO(DIM,2)
 	bnd[ibnd] = [ESTATORL3,VPL10,GAP1L24,GAP21L30,ROTORL42,CAMSARLE];
 	bndname[ibnd]="sperio2";
 
+	ibnd++;
+	bnd[ibnd] = [ROTORL43];
+	bndname[ibnd] = "rotrmbnd";
+
 	int[string] ibndname; //to get the boundary index by name
 	for(int i=0;i<nbnd;++i) ibndname[bndname[i]]=i;
 
 	// boundary Dirichlet
 	int[int] sBn0 = [bnd[ibndname["szmin"]]];
 	sBn0=[sBn0,bnd[ibndname["szmax"]]];
-
+ 	int[int] sBn02 = bnd[ibndname["rotrmbnd"]];
+ 	
 	//volume regions
 	int[int][int] rotor(1), magnet(2),stator(1),air(1);
 	rotor[0]=[ROTOR];
@@ -473,12 +478,12 @@ ENDIFMACRO
 IFMACRO(DIM,2)
 	// Exportando para o Octave
 	real tr = (pi*rm)/p;
-	real[int] xcoord(1001), Babs(1001), Brmx(1001), Brmy(1001);
+	real[int] xcoord(10001), Babs(10001), Brmx(10001), Brmy(10001);
 	ofstream file1("Babs.txt");
 	real zcoord = hest+hbob+hgap/2; //0.01515
 	int i;// x vai de 0 até tr/2
-	for (i=1; i<1001; i++){
-		xcoord[i] = (tr/1000)*i;
+	for (i=1; i<10001; i++){
+		xcoord[i] = (tr/10000)*i;
 		Babs[i] = sqrt(bx(xcoord[i],0.01515)^2+by(xcoord[i],0.01515)^2);
 		Brmx[i] = bx(xcoord[i],0.01515);
 		Brmy[i] = by(xcoord[i],0.01515);
@@ -515,7 +520,7 @@ IFMACRO(DIM,2)
 ENDIFMACRO
 
 IFMACRO(DIM,3)
-	tens2(tm0) = [hx*bx,hy*by,hz*bz,0.5*(hy*bz+hz*by),0.5*(hx*bz+hz*bx),0.5*(hx*by+bx*hy)]-0.5*nu*[bx*bx+by*by+bz*bz,bx*bx+by*by+bz*bz,bx*bx+by*by+bz*bz,0,0,0];
+	tens2(tm0) = [hx*bx,hy*by,hz*bz,0.5*(hy*bz+hz*by),0.5*(hx*bz+hz*bx),0.5*(hx*by+bx*hy)]-0.5*nu0*[bx*bx+by*by+bz*bz,bx*bx+by*by+bz*bz,bx*bx+by*by+bz*bz,0,0,0];
 	tens2(tm1) = tens2(tm0)+[bx*mx,by*my,bz*mz,0.5*(by*mz+bz*my),0.5*(bx*mz+bz*mx),0.5*(bx*my+by*mx)];
 	tens2(tm2) = tens2(tm0)-[bx*mx,by*my,bz*mz,0.5*(by*mz+bz*my),0.5*(bx*mz+bz*mx),0.5*(bx*my+by*mx)]+[mx*bx+my*by+mz*bz,mx*bx+my*by+mz*bz,mx*bx+my*by+mz*bz,0,0,0];
 	tens2(tm3) = tens2(tm0)+[mx*bx+my*by+mz*bz,mx*bx+my*by+mz*bz,mx*bx+my*by+mz*bz,0,0,0];
@@ -585,9 +590,7 @@ IFMACRO(COMP2D3D,1)
 ENDIFMACRO
 
 
-// ELASTICITY - Only calculated for the 3D case
-
-IFMACRO(DIM,3)
+// ELASTICITY
 
 IFMACRO(ELAST,1)
 
@@ -663,6 +666,7 @@ support2(rotor,magnet); // Choose between (rotor,magnet) or (stator,coil)
 udirx[](:)=0; //define a value for each dof involved in the Dirichlet boundary conditions
 SetDirichletValue(real,Th,P1,vec,elast,udirx[])
 SetDirichletFlag(real,Th,P1,vec,elast)
+
 if(bchecksupport)
 {
 ThP1vec vec(dofdir);
@@ -671,17 +675,14 @@ plotveccomp(dofdir," ");
 }
 
 macro defconstant(EYoung1,nuPoisson1,rotor,EYoung2,nuPoisson2,magnet)
+
 for(int i=0;i<rotor.n;i++){
 mu= (EYoung1/(2*(1+nuPoisson1)))*(reg#rotor[i]);
 lambda = (EYoung1*nuPoisson1/((1+nuPoisson1)*(1-2*nuPoisson1)))*(reg#rotor[i]);}
 for(int i=0;i<magnet.n;i++){
 mu = mu+(EYoung1/(2*(1+nuPoisson1)))*(reg#magnet[i]);
 lambda = lambda+(EYoung2*nuPoisson2/((1+nuPoisson2)*(1-2*nuPoisson2)))*(reg#magnet[i]);}
-if(bplanestress)
-	for(int i=0;i<rotor.n;i++){
-	lambda = (EYoung1*nuPoisson1/(1-nuPoisson1^2))*(reg#rotor[i]);}
-	for(int i=0;i<magnet.n;i++){
-	lambda = lambda+(EYoung2*nuPoisson2/(1-nuPoisson2^2))*(reg#magnet[i]);} 
+
 // EOM
 
 real EYoungf=200e9; //typical value for Iron and magnet
@@ -695,7 +696,7 @@ IsotropicStiffnessLame(C,lambda,mu);
 
 macro varfelast(rotor,magnet)
 varf elast(vec(u),vec(uu))=  intnd(Th)((reg#rotor#magnet)*gradsT22grads(u,C,uu))
-                          + intnd(Th)((reg#rotor#magnet)*T2grads(tm1,uu) )
+                          + intnd(Th)((reg#rotor#magnet)*T2grads(tm0,uu))
 				                   ;
 // EOM
 
@@ -796,9 +797,23 @@ plotveccomp(u,"solution")
 
 tens2(sigma1) =  T22grads(C,u);
 
+IFMACRO(DIM,2)
+
+macro dirres(rotor,magnet,tm0)
+
+mesh Th#rotor#magnet = trunc(Th,reg#rotor#magnet>0.5);
+plot(Th#rotor#magnet,wait=1,cmm="reg"+Stringification(rotor#magnet));
+DIRres="results/2D/"+Stringification(rotor)+Stringification(magnet)+"/";
+savevtk(DIRres+"sigma"+Stringification(tm0)+".vtu",Th#rotor#magnet,tens2(sigma1),order=order0,dataname="sigma"+Stringification(tm0));
+
+//
+
+ENDIFMACRO
+
+IFMACRO(DIM,3)
+
 macro R sqrt(x*x+y*y) //
 macro theta atan2(y,x) //
-//ThP0vec1 vec(sigmacyl);
 
 ThP1vec vec(ur),vec(ut),vec(uz);
 vec(ur)=[x/R,y/R,0];
@@ -809,27 +824,19 @@ ThP0tens2 tens2(sigcyl);
 tens2(sigcyl)=T2inbasis(sigma1,ur,ut,uz);
 
 macro dirres(rotor,magnet,tm0)
+
 mesh3 Th#rotor#magnet = trunc(Th,reg#rotor#magnet>0.5);
 plot(Th#rotor#magnet,wait=1,cmm="reg"+Stringification(rotor#magnet));
 DIRres="results/3D/"+Stringification(rotor)+Stringification(magnet)+"/";
-/*savevtk(DIRres+"sigma"+Stringification(t0)+".vtu",Th#rotor#magnet,vec(sigmacyl),order=order0,dataname="sigma"+Stringification(t0));*/
 savevtk(DIRres+"sigma"+Stringification(tm0)+".vtu",Th#rotor#magnet,tens2(sigma1),order=order0,dataname="sigma"+Stringification(tm0));
 savevtk(DIRres+"sigmacyl"+Stringification(tm0)+".vtu",Th#rotor#magnet,tens2(sigcyl),order=order0,dataname="sigmacyl"+Stringification(tm0));
-//
-dirres(rotor,magnet,tm1);  // Choose between (rotor,magnet) or (stator,coil)
 
-macro forcnod(rotor,magnet,tm0)
-varf forcemag(vec(u),vec(uu)) =  intnd(Th)(-T2grads(tm1,uu));
-ThP1vec vec(forct),vec(forctcyl);
-forctx[]=forcemag(0,ThP1vec);
-vec(forctcyl) = [(x/R)*forctx+(y/R)*forcty,-(y/R)*forctx+(x/R)*forcty,forctz];
-plotveccomp(forctcyl,"solution")
-savevtk(DIRres+"forc"+Stringification(tm0)+".vtu",Th#rotor#magnet,[forctx,forcty,forctz],order=order1,dataname=Stringification(tm0));
-savevtk(DIRres+"forccyl"+Stringification(tm0)+".vtu",Th#rotor#magnet,vec(forctcyl),order=order1,dataname=Stringification(tm0));
 //
-forcnod(rotor,magnet,tm1); // Choose between (rotor,magnet) or (stator,coil)
-
 
 ENDIFMACRO
+
+
+dirres(rotor,magnet,tm0);  // Choose between (rotor,magnet) or (stator,coil)
+
 
 ENDIFMACRO

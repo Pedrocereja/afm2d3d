@@ -98,9 +98,9 @@ macro IsotropicStiffnessLame(C,lambda,mu) [tens22comp(C)]=[(lambda+2*mu),(lambda
 macro Mtens22(C) [[C#xxxx,C#xxyy,C#xxzz,       0,       0,       0],
                  [ C#xxyy,C#yyyy,C#yyzz,       0,       0,       0],
                  [ C#xxzz,C#yyzz,C#zzzz,       0,       0,       0],
-                 [      0,     0,     0,2*C#yzyz,       0,       0],
-                 [      0,     0,     0,       0,2*C#xzxz,       0],
-                 [      0,     0,     0,       0,       0,2*C#xyxy]] //
+                 [      0,     0,     0,2*C#xyxy,       0,       0],
+                 [      0,     0,     0,       0,2*C#yzyz,       0],
+                 [      0,     0,     0,       0,       0,2*C#zxzx]] //
 
 macro T22T2(C,T) [ C#xxxx*T#xx + C#xxyy*T#yy + C#xxzz*T#zz,
 		               C#xxyy*T#xx + C#yyyy*T#yy + C#yyzz*T#zz,
@@ -120,7 +120,7 @@ macro T2T22T2(U,C,T)  ([ U#xx, U#yy, U#zz, 2*U#yz, 2*U#xz, 2*U#xy]'*T22T2(C,T))/
 
 macro T2T22grads(U,C,u) ([ U#xx, U#yy, U#zz, 2*U#yz, 2*U#xz, 2*U#xy]'*T22grads(C,u))//
 
-macro gradsT22grads(uu,C,u) ([ dx(uu#x),dy(uu#y),dz(uu#z),(dy(uu#z)+dz(uu#y)),(dx(uu#z)+dz(uu#x)),(dx(uu#y)+dy(uu#x))]'*T22grads(C,u))//
+macro gradsT22grads(uu,C,u) ([ dx(uu#x),dy(uu#y),dz(uu#z),0.5*(dy(uu#z)+dz(uu#y)),0.5*(dx(uu#z)+dz(uu#x)),0.5*(dx(uu#y)+dy(uu#x))]'*T22grads(C,u))//
 
 macro T2T2(U,T)  ([ U#xx, U#yy, U#zz, 2*U#yz, 2*U#xz, 2*U#xy]'*tens2(T))//
 

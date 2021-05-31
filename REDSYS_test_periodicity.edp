@@ -1,0 +1,251 @@
+include "REDSYS_test/REDSYS.edp"
+include "ARRAYS.edp"
+
+bool bplotmasterslave=0;
+bool withisovalue=1;
+real periodconnectcoef=1; //1=periodicity, -1=antiperiodicity
+
+// n1==n3 => same mesh on the 2 lines in periodic condition
+// n1=!n3 => different meshes on the 2 lines in periodic condition
+int n1=10;
+int n3=10;
+
+real angle=1.*pi/4;
+func fp = 10*cos(2*pi/angle*atan(y/x)) ; //source term
+//func fp = 0 ; //source term
+
+int nn=4; //mesh density coefficient
+
+int labext1=1;
+int labext2=2;
+int labext3=3;
+int labext4=4;
+
+real rint=1, rext=2;
+border ext1(t=0,1){ x=(rint+t*(rext-rint))*cos(pi/8);    y=-(rint+t*(rext-rint))*sin(pi/8);      label=labext1;}
+border ext2(t=-1,1){ x=rext*cos(pi/8*t);    y=rext*sin(pi/8*t);      label=labext2;}
+border ext3(t=1,0){x=(rint+t*(rext-rint))*cos(pi/8);    y=(rint+t*(rext-rint))*sin(pi/8);     label=labext3;}
+border ext4(t=1,-1){ x=rint*cos(pi/8*t);    y=rint*sin(pi/8*t);      label=labext4;}
+
+int labmat1=5;
+int labmat2=6;
+int labmat3=7;
+int labmat4=8;
+
+real matx1=(rint+rext)/2;
+real matx2=(rint+3*rext)/4;
+real maty1=matx1*tan(-0.8*pi/8)/2;
+real maty2=matx1*tan(0.8*pi/8)/2;
+
+real aaa=1.5;
+border mat1(t=0,1){ x=matx1+t*(matx2-matx1);    y=maty1;      label=labmat1;}
+border mat2(t=0,1){ x=matx2-aaa*t*(matx2-matx1);								    y=maty1+t*(maty2-maty1);      label=labmat2;}
+border mat3(t=1,0){ x=matx1+t*(matx2-matx1)-aaa*(matx2-matx1);    y=maty2;      label=labmat3;}
+border mat4(t=1,0){ x=matx1-aaa*t*(matx2-matx1);								    y=maty1+t*(maty2-maty1);    label=labmat4;}
+
+int labc=9;
+real ri=0.1, ai=pi/16*0.8, rc=1.6;
+border ci(t=0,-2*pi){ x=rc*cos(ai)+ri*cos(t);    y=rc*sin(ai)+ri*sin(t);      label=labc;}
+
+int labcc=10;
+real rcc=1.2, aii=-pi/16*0.8;
+border cci(t=0,-2*pi){ x=rcc*cos(aii)+ri*cos(t);    y=rcc*sin(aii)+ri*sin(t);      label=labcc;}
+
+mesh Th=buildmesh(ext1(n1*nn)+ext2(10*nn)+ext3(n3*nn)+ext4(10*nn)
+									+mat1(5*nn)+mat2(5*nn)+mat3(5*nn)+mat4(5*nn)
+									+ci(4*nn)+cci(4*nn));
+
+mesh Thper=movemesh(Th,[cos(angle)*x-sin(angle)*y,sin(angle)*x+cos(angle)*y]);
+plot(Th,Thper,wait=1);
+
+/*
+mesh Thtot=Th+Thper;
+fespace ThtotP1(Thtot,P1);
+ThtotP1 uu=x;
+plot(uu,wait=1,fill=1,value=1);
+*/
+fespace ThP1(Th,P1);
+fespace ThperP1(Thper,P1);
+
+ThP1 fpP1=fp;
+plot(fpP1,wait=1,value=1,fill=1,cmm="source term");
+
+ThP1 u;
+real[int] indn=(1:u[].n);
+u[]=indn;
+plot(u,wait=1,value=1,fill=1,cmm="node index on initial mesh");
+
+ThperP1 uper;
+uper=u;
+plot(u,uper,wait=1,value=1,fill=1,cmm="node index on initial mesh and extrapolation on rotated mesh");
+
+matrix M=interpolate(ThperP1,ThP1,inside=true);
+uper[]=M*u[];
+u[]=uper[];
+plot(u,uper,wait=1,value=1,fill=1,cmm="nodes involved in the connection (periodicity)");
+
+real[int] connectcoef(M.n);
+ThP1 xx=sqrt(x^2+y^2);
+connectcoef(:)=periodconnectcoef;
+//connectcoef=xx[]; //test
+
+ThP1 u1;
+int[int,int] ThP1scalphiintflagiso(0,0);//zero size when there is no isovalue condition
+
+int indnodeoniso=-1;
+int indnodeoniso2=-1;
+if(withisovalue)
+{
+	ThP1scalphiintflagiso.resize(u1[].n,2);
+
+	ThP1scalphiintflagiso(:,0)=0; // be careful with tables [int,int], they must be fully initialized manually
+	varf onc(a,aa)=on(labc,a=1);
+	real[int] vonc=onc(0,ThP1,tgv=1);
+	for(int i=0;i<vonc.n;++i) if(vonc(i)>0.5) {ThP1scalphiintflagiso(i,0)=1; indnodeoniso=i;}
+
+	ThP1scalphiintflagiso(:,1)=0;// be careful with tables [int,int], they must be fully initialized manually
+	varf oncc(a,aa)=on(labcc,a=1);
+	real[int] voncc=oncc(0,ThP1,tgv=1);
+	for(int i=0;i<voncc.n;++i) if(voncc(i)>0.5) {ThP1scalphiintflagiso(i,1)=1; indnodeoniso2=i;}
+}
+
+ExtensionMatrix(real, ThP1scalphiintflagiso, M, connectcoef,phi)
+
+cout << "MatExtphi.m = " << MatExtphi.m << endl;
+cout << "MatExtphi.n = " << MatExtphi.n << endl;
+
+if(bplotmasterslave)
+{
+for(int i=0;i<masterindphi.n;++i)
+{
+	u1[](:)=0;
+	u1[](masterindphi(i))=1;
+	plot(u1,wait=1,fill=1,value=1,cmm="master");
+	real[int] temp(MatExtphi.m);
+	temp=MatExtphi'*u1[];
+	u1[]=MatExtphi*temp;
+
+	plot(u1,wait=1,fill=1,value=1,cmm="master & slave");
+}
+}
+
+varf laplace(p,pp)=int2d(Th)(dx(p)*dx(pp)+dy(p)*dy(pp))
+										+int2d(Th)(fp*pp)
+										+on(labmat1,p=0)+on(labmat3,p=2)+on(labext4,p=1);
+matrix A=laplace(ThP1,ThP1);
+real[int] B=laplace(0,ThP1);
+u1[]=A^-1*B;
+plot(u1,wait=1,fill=1,value=1,cmm="laplace solution with natural Neumann condition, and FF dirichlet");
+
+varf vflagbnd(p,pp)=on(labmat3,p=1)+on(labmat1,p=1)+on(labext4,p=1);
+real[int] flagbnd=vflagbnd(0,ThP1,tgv=1); //boundary flag for Dirichlet condition
+
+//convert to int flag
+int[int] intflagbnd(flagbnd.n);
+for(int i=0;i<flagbnd.n;++i)
+	if(abs(flagbnd(i))>0) intflagbnd(i)=1;
+	else intflagbnd(i)=0;
+
+ExtensionMatrix2(real, ThP1scalphiintflagiso, M, connectcoef,intflagbnd,phi2)
+
+matrix Atemp=A*MatExtphi2;
+A=MatExtphi2'*Atemp; // restricted matrix
+real[int] BB=MatExtphi2'*B; // restricted RHS
+cout << "A.n = " << A.n <<endl;
+cout << "A.m = " << A.m <<endl;
+cout << "BB.n = " << BB.n <<endl;
+real[int] solper(BB.n);
+set(A,solver=sparsesolver);
+solper=A^-1*BB;
+u1[]=MatExtphi2*solper; // extension of the solution
+
+plot(u1,wait=1,fill=1,value=1,cmm="laplace solution with periodicity, isovalues and FF dirichlet");
+
+
+varf laplaceDir(p,pp)=int2d(Th)(dx(p)*dx(pp)+dy(p)*dy(pp))
+											+int2d(Th)(fp*pp)
+											;//+on(labmat1,p=0);
+matrix ADir=laplaceDir(ThP1,ThP1);
+real[int] BDir=laplaceDir(0,ThP1);
+varf vvaluebnd(p,pp)=on(labmat3,p=2)+on(labmat1,p=0)+on(labext4,p=1);
+real[int] valuebnd=vvaluebnd(0,ThP1,tgv=1); //boundary flag for Dirichlet condition
+
+RedSysDirichlet(real, ADir, BDir, intflagbnd, intflagbnd, valuebnd)
+
+ADir=ADir*MatExtphi2;
+ADir=MatExtphi2'*ADir;
+real[int] BB1=MatExtphi2'*BDir; //restricted RHS
+
+real[int] solper1(BB1.n);
+set(ADir,solver=sparsesolver);
+solper1=ADir^-1*BB1;
+
+u1[]=MatExtphi2*solper1; //extends the solution to the original problem
+plot(u1,wait=1,fill=1,value=1,cmm="laplace solution with periodicity, isovalues  and dirichlet elimination");
+
+if(withisovalue)
+{
+	real uoniso=u1[][indnodeoniso]; //get the value of the solution on the isovalue region
+}
+
+if(bplotmasterslave)
+{
+	varf oneonperandc(a,aa)=on(labext3,a=0)+on(labext1,a=0)+on(labc,a=-1)+on(labcc,a=-1);
+	real[int] voneonperandc=oneonperandc(0,ThP1,tgv=1);
+	u1[]=voneonperandc;
+	real[int] oneu(u1[].n);
+	oneu(:)=1;
+	u1[]+=oneu;
+	plot(u1,wait=1,fill=1,value=1,cmm="one ");
+
+	real[int] utemp=MatExtphi2'*u1[];
+	u1[]=MatExtphi2*utemp;
+	plot(u1,wait=1,fill=1,value=1,cmm="MatExt*(MatExt'*one)");
+}
+
+
+if(n1==n3)
+{
+//	varf laplace(p,pp)=int2d(Th)(dx(p)*dx(pp)+dy(p)*dy(pp))
+//											+int2d(Th)(fp*pp)
+//											+on(labmat1,p=0)+on(labmat3,p=2);//+on(labc,p=uoniso);
+
+	fespace ThP1periodic(Th,P1,periodic=[[labext1,sqrt((x^2+y^2))],[labext3,sqrt((x^2+y^2))]]);
+	matrix Aperiodic=laplace(ThP1periodic,ThP1periodic);
+	real[int] Bperiodic=laplace(0,ThP1periodic);
+
+	ThP1periodic u1;
+	int[int,int] ThP1periodicscalphiintflagiso(0,0);//zero size when there is no isovalue condition
+
+	if(withisovalue)
+	{
+		ThP1periodicscalphiintflagiso.resize(u1[].n,2);
+
+		ThP1periodicscalphiintflagiso(:,0)=0;
+		varf onc(a,aa)=on(labc,a=1);
+		real[int] vonc=onc(0,ThP1periodic,tgv=1);
+		for(int i=0;i<vonc.n;++i) if(vonc(i)>0.5) {ThP1periodicscalphiintflagiso(i,0)=1;}
+
+		ThP1periodicscalphiintflagiso(:,1)=0;
+		varf oncc(a,aa)=on(labcc,a=1);
+		real[int] voncc=oncc(0,ThP1periodic,tgv=1);
+		for(int i=0;i<voncc.n;++i) if(voncc(i)>0.5) {ThP1periodicscalphiintflagiso(i,1)=1;}
+	}
+
+	matrix voidM(u1.n,u1.n); // void matrix when there is no connection (periodicity) condition
+	real[int] connectcoef(u1.n);
+
+	ExtensionMatrix(real, ThP1periodicscalphiintflagiso, voidM, connectcoef,phiper)
+
+	matrix Atemp=Aperiodic*MatExtphiper;
+	Aperiodic=MatExtphiper'*Atemp; // restricted matrix
+	real[int] BB=MatExtphiper'*Bperiodic; // restricted RHS
+	real[int] solper(BB.n);
+	set(Aperiodic,solver=sparsesolver);
+	solper=Aperiodic^-1*BB;
+	u1[]=MatExtphiper*solper; // extension of the solution
+
+	//u1[]=Aperiodic^-1*Bperiodic;
+
+	plot(u1,wait=1,fill=1,value=1,cmm="laplace solution with FF periodic fespace, FF dirichlet and isovalue");
+}

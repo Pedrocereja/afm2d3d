@@ -141,12 +141,16 @@ varf vflagbnd(p,pp)=on(labmat3,p=1)+on(labmat1,p=1)+on(labext4,p=1);
 real[int] flagbnd=vflagbnd(0,ThP1,tgv=1); //boundary flag for Dirichlet condition
 
 //convert to int flag
+
+/*
 int[int] intflagbnd(flagbnd.n);
 for(int i=0;i<flagbnd.n;++i)
 	if(abs(flagbnd(i))>0) intflagbnd(i)=1;
 	else intflagbnd(i)=0;
+*/
 
-ExtensionMatrix2(real, ThP1scalphiintflagiso, M, connectcoef,intflagbnd,phi2)
+//ExtensionMatrix2(real, ThP1scalphiintflagiso, M, connectcoef,intflagbnd,phi2)
+ExtensionMatrix2(real, ThP1scalphiintflagiso, M, connectcoef,flagbnd,phi2)
 
 matrix Atemp=A*MatExtphi2;
 A=MatExtphi2'*Atemp; // restricted matrix
@@ -170,7 +174,8 @@ real[int] BDir=laplaceDir(0,ThP1);
 varf vvaluebnd(p,pp)=on(labmat3,p=2)+on(labmat1,p=0)+on(labext4,p=1);
 real[int] valuebnd=vvaluebnd(0,ThP1,tgv=1); //boundary flag for Dirichlet condition
 
-RedSysDirichlet(real, ADir, BDir, intflagbnd, intflagbnd, valuebnd)
+//RedSysDirichlet(real, ADir, BDir, intflagbnd, intflagbnd, valuebnd)
+RedSysDirichlet(real, ADir, BDir, flagbnd, flagbnd, valuebnd)
 
 ADir=ADir*MatExtphi2;
 ADir=MatExtphi2'*ADir;

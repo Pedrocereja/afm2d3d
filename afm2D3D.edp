@@ -7,7 +7,7 @@ load "iovtk"
 load "medit"
 load "msh3"
 
-macro DIM 3 // /* 2=2D , 3=3D */
+macro DIM 2 // /* 2=2D , 3=3D */
 macro COMP2D3D 0 // /* Nodal force comparision between 2D and 3D case, 1 if true */
 macro ELAST 1 // /* Set 1 to perform the elasticity simulation */
 
@@ -381,6 +381,7 @@ if(1)
 
 	cout << "build finite element system" << endl;
 	matrix AA=magstat(Thfetype1vec1,Thfetype1vec1); //Matriz AA somente para a malha TH
+	cout << "AA.nnz = " << AA.nnz << endl;
 	real[int] BB=magstat(0,Thfetype1vec1);
 	BB = -BB;
 	cout << "end build finite element system" << endl; // Matriz BB somente para a malha Th - Termo fonte
@@ -685,7 +686,7 @@ IFMACRO(ELAST,1)
 	int[int,int] flagiso0(0,0);// no isovalue condition
 	real[int] connectcoef(MM.n);
 	connectcoef(:)=1;
-	ExtensionMatrix(real, flagiso0, MM, connectcoef,elast)
+	ExtensionMatrix2(real, flagiso0, MM, connectcoef,ThP1vecelastdirflag,elast)
 	cout << "end build extension matrix" << endl;
 
 	if(0)

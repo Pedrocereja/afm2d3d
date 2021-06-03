@@ -140,6 +140,131 @@ func int[int] NzIndex(complex[int] &v)
 	return indnz;
 }
 
+func int[int] GthIndex(int[int] &v, real th)
+{
+	int nnz;
+	for(int i=0;i<v.n;++i)	if(abs(v(i))>th) { ++nnz;}
+
+	int[int] indnz(nnz);
+	int count=0;
+	for(int i=0;i<v.n;++i) if(abs(v(i))>th) {indnz(count++)=i;}
+
+	return indnz;
+}
+
+func int[int] GthIndex(real[int] &v, real th)
+{
+	int nnz;
+	for(int i=0;i<v.n;++i)	if(abs(v(i))>th) { ++nnz;}
+
+	int[int] indnz(nnz);
+	int count=0;
+	for(int i=0;i<v.n;++i) if(abs(v(i))>th) {indnz(count++)=i;}
+
+	return indnz;
+}
+
+func int[int] GthIndex(complex[int] &v, real th)
+{
+	int nnz;
+	for(int i=0;i<v.n;++i)	if(abs(v(i))>th) { ++nnz;}
+
+	int[int] indnz(nnz);
+	int count=0;
+	for(int i=0;i<v.n;++i) if(abs(v(i))>th) {indnz(count++)=i;}
+
+	return indnz;
+}
+
+func int IJvM(int[int] &I, int[int] &J, real[int] &v, matrix &M, real th)
+{
+if(M.n==0)
+{
+	int[int] temp;
+	I=[temp]; J=[temp];
+	real[int] rtemp;
+	v=[rtemp];
+}else{
+	[I,J,v]=M;
+	if(M.nnz>1)
+	{
+		I=[I(0:M.nnz-1)]; J=[J(0:M.nnz-1)]; v=[v(0:M.nnz-1)];
+	}else{
+		/*I=[I(0)];J=[J(0)]; v=[v(0)];*/
+		I=[M.n-1];J=[M.m-1]; v=[0];
+	}
+	if(th>=0)
+	{
+		int[int] indnz = GthIndex(v,th);
+		int nnz=indnz.n;
+		if(nnz==0)
+		{
+			I=[M.n-1];
+			J=[M.m-1];
+			v=[0];
+		}else{
+			int[int] temp(nnz);
+			temp=I(indnz); I=[temp];
+			temp=J(indnz); J=[temp];
+			real[int] rtemp(nnz);
+			rtemp=v(indnz); v=[rtemp];
+			if((I.max<(M.n-1))||(J.max<(M.m-1)))
+			{
+				I=[I,M.n-1];
+				J=[J,M.m-1];
+				v=[v,0];
+			}
+		}
+	}
+}
+return 0;
+}
+
+func int IJvM(int[int] &I, int[int] &J, complex[int] &v, matrix<complex> &M, real th)
+{
+if(M.n==0)
+{
+	int[int] temp;
+	I=[temp]; J=[temp];
+	complex[int] rtemp;
+	v=[rtemp];
+}else{
+	[I,J,v]=M;
+	if(M.nnz>1)
+	{
+		I=[I(0:M.nnz-1)]; J=[J(0:M.nnz-1)]; v=[v(0:M.nnz-1)];
+	}else{
+		/*I=[I(0)];J=[J(0)]; v=[v(0)];*/
+		I=[M.n-1];J=[M.m-1]; v=[0];
+	}
+	if(th>=0)
+	{
+		int[int] indnz = GthIndex(v,th);
+		int nnz=indnz.n;
+		if(nnz==0)
+		{
+			I=[M.n-1];
+			J=[M.m-1];
+			v=[0];
+		}else{
+			int[int] temp(nnz);
+			temp=I(indnz); I=[temp];
+			temp=J(indnz); J=[temp];
+			complex[int] rtemp(nnz);
+			rtemp=v(indnz); v=[rtemp];
+			if((I.max<(M.n-1))||(J.max<(M.m-1)))
+			{
+				I=[I,M.n-1];
+				J=[J,M.m-1];
+				v=[v,0];
+			}
+		}
+	}
+}
+return 0;
+}
+
+/*
 func int IJvM(int[int] &I, int[int] &J, real[int] &v, matrix &M)
 {
 if(M.n==0)
@@ -178,7 +303,6 @@ if(M.n==0)
 		}
 	}
 
-	/*M=[I,J,v];*/
 }
 return 0;
 }
@@ -221,17 +345,16 @@ if(nnz==0)
 	}
 }
 
-/*M=[I,J,v];*/
 }
 return 0;
 }
+*/
 
 func int CleanSparseMatrix(matrix &M, real th)
 {
 	int[int] I,J;
 	real[int] v;
-	IJvM(I,J,v,M);
-	for(int i=0; i<v.n;++i) if(abs(v(i))<th) v(i)=0;
+	IJvM(I,J,v,M,th);
 	M=[I,J,v];
 	return 0;
 }
@@ -240,8 +363,7 @@ func int CleanSparseMatrix(matrix<complex> &M, real th)
 {
 	int[int] I,J;
 	complex[int] v;
-	IJvM(I,J,v,M);
-	for(int i=0; i<v.n;++i) if(abs(v(i))<th) v(i)=0;
+	IJvM(I,J,v,M,th);
 	M=[I,J,v];
 	return 0;
 }
@@ -265,6 +387,7 @@ func int FirstOccurenceInArray(int &a, int[int] &b)
 	return j;
 }
 
+/* not efficient
 func int[int] Unique(int[int] &a, int[int] &b)
 {
 	int[int] iu;
@@ -279,6 +402,50 @@ func int[int] Unique(int[int] &a, int[int] &b)
 		}
 	}
 	return iu;
+}
+*/
+
+func int[int] UniqueSorted(int[int] &a, int[int] &b)
+{
+	int[int] iu;
+	if(a.n>0)
+	{
+		int nu=1;
+		int aa=a(0);
+		for(int i=1;i<a.n;++i)
+		{
+			if(a(i)>aa)
+			{
+				nu++;
+				aa=a(i);
+			}
+		}
+		int[int] bb(nu),iuu(nu);
+		bb(0)=a(0);
+		iuu(0)=0;
+		nu=0;
+		aa=a(0);
+		for(int i=1;i<a.n;++i)
+		{
+			if(a(i)>aa)
+			{
+				nu++;
+				aa=a(i);
+				bb(nu)=a(i);
+				iuu(nu)=i;
+			}
+		}
+		iu=[iuu];
+		b=[bb];
+	}
+	return iu;
+}
+
+func int[int] Unique(int[int] &a, int[int] &b)
+{
+	int[int] as(a);
+	as.sort;
+	return UniqueSorted(as, b);
 }
 
 //intersection of integer sets

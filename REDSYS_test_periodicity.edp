@@ -236,7 +236,6 @@ if(n1==n3)
 		real[int] voncc=oncc(0,ThP1periodic,tgv=1);
 		for(int i=0;i<voncc.n;++i) if(voncc(i)>0.5) {ThP1periodicscalphiintflagiso(i,1)=1;}
 	}
-
 	matrix voidM(u1.n,u1.n); // void matrix when there is no connection (periodicity) condition
 	real[int] connectcoef(u1.n);
 

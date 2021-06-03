@@ -17,6 +17,7 @@ bool bplotregion=false; // set to "true" to plot the physical regions
 bool bplotcoils=false; // set to "true" to plot the mesh associated with each coil (3D) or the current density associated to each coil (2D)
 bool bplotmag=false; // set to "true" to plot the magnetostatic problem results
 bool bplotmec=false; // set to "true" to plot the mechanical problem results
+bool bplotforces=true; // set to "true" to plot nodal forces (only 2D)
 
 bool bperiodicity=true; // set to "true" to apply periodicity condition
 bool bcheckperiodicitydofs = false; // set to "true" to check the periodicity dofs
@@ -376,6 +377,7 @@ varf magstat(vec1(a),vec1(aa)) = intnd(Th)(nu*rot2(a)'*rot2(aa))
 										- intnd(Th)(nu*vec2(Br)'*rot2(aa))
 										;
 
+matrix MatExtms;
 if(1)
 {
 
@@ -396,6 +398,7 @@ if(1)
 	connectcoef(:)=1;
 	ExtensionMatrix2(real, flagiso0, M, connectcoef,Thfetype1vec1magstatdirflag,magstat)
 	cout << "end build extension matrix" << endl;
+	MatExtms=MatExtmagstat;
 
 	cout << "build restricted (iso and periodicity) system" << endl;
 	matrix Atemp1=AA*MatExtmagstat;
@@ -414,6 +417,7 @@ if(1)
 	cout <<"span to original system" << endl;
 	vec1firstcomp(a)[]=MatExtmagstat*solper; //extends the solution to the original problem
 	cout <<"end span to original system" << endl;
+
 }
 
 ThP0vec2 vec2(b),vec2(h),vec2(m);
@@ -503,12 +507,25 @@ IFMACRO(DIM,2)
 		varf forcemag(vec(u),vec(uu)) =  intnd(Th)(-T2grads(tm2,uu));
 		ThP1vec vec(forct);
 		forctx[]=forcemag(0,ThP1vec);
+		if(bplotforces)
+		{
+				plotveccomp(forct," nodal forces ");
+				ThP1scal fx=forctx, fy=forcty;
+				real[int] temp=MatExtms'*fx[];
+				fx[]=MatExtms*temp;
+				plot(fx,wait=1,fill=1,value=1,cmm=" comp x of nodal force considering periodicity ");
+				temp=MatExtms'*fy[];
+				fy[]=MatExtms*temp;
+				plot(fy,wait=1,fill=1,value=1,cmm=" comp y of nodal force considering periodicity ");
+
+		}
 		savevtk(DIRres+"forc"+Stringification(t0)+".vtu",Th#rotor#magnet,[forctx,forcty,0],order=order1,dataname=Stringification(t0));
 		savevtk(DIRres+"nodesurf"+Stringification(t0)+".vtu",Th#rotor#magnet,[nodesurfx,nodesurfy,0],order=order1,dataname=Stringification(nodesurf));
 		forctx[]./=nodesurfx[]; /*force density = nodal force / node surface */
 		savevtk(DIRres+"densforc"+Stringification(t0)+".vtu",Th#rotor#magnet,[forctx,forcty,0],order=order1,dataname=Stringification(denst0));
 	//
 	forcnod(,,tm2);
+
 
 ENDIFMACRO
 

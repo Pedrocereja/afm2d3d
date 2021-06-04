@@ -503,14 +503,26 @@ IFMACRO(DIM,2)
 	varf nodesurface(vec(u),vec(uu)) =  intnd(Th)(uux+uuy); //to compute the surface associated with each node ()
 	ThP1vec vec(nodesurf);
 	nodesurfx[]=nodesurface(0,ThP1vec);
-	macro forcnod(rotor,magnet,t0)
+	macro forcnod(namereg1,namereg2,t0)
 		varf forcemag(vec(u),vec(uu)) =  intnd(Th)(-T2grads(tm2,uu));
 		ThP1vec vec(forct);
 		forctx[]=forcemag(0,ThP1vec);
+		real[int] ftotmagnet(magnet.n);
+		for(int im=0;im<magnet.n;++im)
+		{
+			FlagDofRegion(Th,P1,scal,magnet[im],[1],onmagnet);
+			ThP1scal onmagnet;
+			onmagnet[]=flagdofregiononmagnet;
+			plot(onmagnet,wait=1,fill=1,value=1,cmm=" onmagnet ");
+			ThP0scal magnetandlayer=(onmagnet>0);
+			plot(magnetandlayer,wait=1,fill=1,value=1,cmm=" magnetandlayer ");
+			ftotmagnet(im) =  intnd(Th)(-magnetandlayer*T2grads(tm2,uu));
+		}
+
 		if(bplotforces)
 		{
 				plotveccomp(forct," nodal forces ");
-				ThP1scal fx=forctx, fy=forcty;
+				Thfetype1vec1 fx=forctx, fy=forcty;
 				real[int] temp=MatExtms'*fx[];
 				fx[]=MatExtms*temp;
 				plot(fx,wait=1,fill=1,value=1,cmm=" comp x of nodal force considering periodicity ");
@@ -519,11 +531,12 @@ IFMACRO(DIM,2)
 				plot(fy,wait=1,fill=1,value=1,cmm=" comp y of nodal force considering periodicity ");
 
 		}
-		savevtk(DIRres+"forc"+Stringification(t0)+".vtu",Th#rotor#magnet,[forctx,forcty,0],order=order1,dataname=Stringification(t0));
-		savevtk(DIRres+"nodesurf"+Stringification(t0)+".vtu",Th#rotor#magnet,[nodesurfx,nodesurfy,0],order=order1,dataname=Stringification(nodesurf));
+		savevtk(DIRres+"forc"+Stringification(t0)+".vtu",Th#namereg1#namereg2,[forctx,forcty,0],order=order1,dataname=Stringification(t0));
+		savevtk(DIRres+"nodesurf"+Stringification(t0)+".vtu",Th#namereg1#namereg2,[nodesurfx,nodesurfy,0],order=order1,dataname=Stringification(nodesurf));
 		forctx[]./=nodesurfx[]; /*force density = nodal force / node surface */
-		savevtk(DIRres+"densforc"+Stringification(t0)+".vtu",Th#rotor#magnet,[forctx,forcty,0],order=order1,dataname=Stringification(denst0));
+		savevtk(DIRres+"densforc"+Stringification(t0)+".vtu",Th#namereg1#namereg2,[forctx,forcty,0],order=order1,dataname=Stringification(denst0));
 	//
+
 	forcnod(,,tm2);
 
 
@@ -640,8 +653,8 @@ IFMACRO(ELAST,1)
 	macro support2(rotor,magnet)
 
 		SubFEspace(real,Th,P1,vec,elast)
-		AddDirichlet(Th,P1,vec,elast,flagdofboundaryrintP1vec)
-		int[int] notflagdofregion#rotor#magnet#P1vec(flagdofregion#rotor#magnet#P1vec.n);
+		/*AddDirichlet(Th,P1,vec,elast,flagdofboundaryrintP1vec)*/
+		real[int] notflagdofregion#rotor#magnet#P1vec(flagdofregion#rotor#magnet#P1vec.n);
 		notflagdofregion#rotor#magnet#P1vec(:)=1;
 		notflagdofregion#rotor#magnet#P1vec-=flagdofregion#rotor#magnet#P1vec;
 		AddDirichlet(Th,P1,vec,elast,notflagdofregion#rotor#magnet#P1vec)

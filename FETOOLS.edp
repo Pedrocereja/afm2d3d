@@ -88,9 +88,11 @@ plot(bndI,value=1,fill=1,wait=1,cmm="boundary "+Stringification(I));
 }
 //
 
-macro FlagDofRegion(Th,fetype,form,I,coef,idflag)
-int[int] flagdofregion#idflag(Th#fetype#form.ndof);
+macro FlagDofRegion(Th,fetype,form,indreg,coef,idflag)
+real[int] flagdofregion#idflag(Th#fetype#form.ndof);
 {
+	int[int] I;
+	for(int i=0;i<indreg.n;++i) I=[I,indreg[i]]; /* conversion of int[int][int] to int[int], for int[int] entry just makes a copy */
 	real[int] vcoef=coef;
 	flagdofregion#idflag(:)=0;
 	real tol=1e-9;
@@ -112,9 +114,11 @@ int[int] flagdofregion#idflag(Th#fetype#form.ndof);
 }
 //
 
-macro FlagDofBoundary(Th,fetype,form,I,coef,idflag)
-int[int] flagdofboundary#idflag(Th#fetype#form.ndof);
+macro FlagDofBoundary(Th,fetype,form,indreg,coef,idflag)
+real[int] flagdofboundary#idflag(Th#fetype#form.ndof);
 {
+	int[int] I;
+	for(int i=0;i<indreg.n;++i) I=[I,indreg[i]]; /* conversion of int[int][int] to int[int], for int[int] entry just makes a copy */
 	real[int] vcoef=coef;
 	flagdofboundary#idflag(:)=0;
 	Th#fetype#form form(b);

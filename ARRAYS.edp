@@ -9,6 +9,11 @@ func int[int] Real2Int(real[int] &a)
 	return ia;
 }
 
+func int[int] Real2Int(int[int] &a)
+{
+	return a;
+}
+
 func real[int] Int2Real(int[int] &a)
 {
 	real[int] ia(a.n);
@@ -16,6 +21,11 @@ func real[int] Int2Real(int[int] &a)
 		ia(i)=a(i);
 
 	return ia;
+}
+
+func real[int] Int2Real(real[int] &a)
+{
+	return a;
 }
 
 func int[int] flagIntersection(int[int] &a, int[int] &b)

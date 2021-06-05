@@ -19,7 +19,12 @@ plot(a#y,b#y,wait=1,fill=1,value=1,cmm=Stringification(a)+"y : "+txt);
 plot(a#z,b#z,wait=1,fill=1,value=1,cmm=Stringification(a)+"z : "+txt);
 //
 
-macro tens22compi(A,i) A#xxxx#i,A#yyyy#i,A#zzzz#i,A#yzyz#i,A#xzxz#i,A#xyxy#i,A#xzxy#i,A#yzxy#i,A#zzxy#i,A#yyxy#i,A#xxxy#i,A#xxxz#i,A#yyxz#i,A#zzxz#i,A#yzxz#i,A#zzyz#i,A#yyyz#i,A#xxyz#i,A#xxzz#i,A#yyzz#i,A#xxyy#i //
+macro tens22compi(A,i) A#xxxx#i,A#yyyy#i,A#zzzz#i,A#yzyz#i,A#xzxz#i,A#xyxy#i,
+                        A#xzxy#i,A#yzxy#i,A#zzxy#i,A#yyxy#i,A#xxxy#i,
+                        A#xxxz#i,A#yyxz#i,A#zzxz#i,A#yzxz#i,
+                        A#zzyz#i,A#yyyz#i,A#xxyz#i,
+                        A#xxzz#i,A#yyzz#i,
+                        A#xxyy#i //
 macro tens22comp(A) tens22compi(A,) //
 macro tens22(A) [tens22comp(A)] //
 
@@ -33,7 +38,7 @@ macro veccompi(A,i) A#x#i,A#y#i,A#z#i //
 macro veccomp(A) veccompi(A,) //
 macro vec(A) [veccomp(A)] //
 macro vecdir(A,B) A#x=B#x,A#y=B#y,A#z=B#z //
-macro veccompdir(A,B,coef) A#x=coef(0)*B#x,A#y=coef(0)*B#y,A#z=coef(0)*B#z //
+macro veccompdir(A,B,coef) A#x=coef(0)*B#x,A#y=coef(1)*B#y,A#z=coef(2)*B#z //
 macro veccompsum(A) A#x + A#y + A#z //
 macro veccompsumprod(A,B,coef) coef(0)*A#x*B#x + coef(1)*A#y*B#y + coef(2)*A#z*B#z//
 macro vecfirstcomp(A) A#x //
@@ -98,9 +103,9 @@ macro IsotropicStiffnessLame(C,lambda,mu) [tens22comp(C)]=[(lambda+2*mu),(lambda
 macro Mtens22(C) [[C#xxxx,C#xxyy,C#xxzz,       0,       0,       0],
                  [ C#xxyy,C#yyyy,C#yyzz,       0,       0,       0],
                  [ C#xxzz,C#yyzz,C#zzzz,       0,       0,       0],
-                 [      0,     0,     0,2*C#xyxy,       0,       0],
-                 [      0,     0,     0,       0,2*C#yzyz,       0],
-                 [      0,     0,     0,       0,       0,2*C#zxzx]] //
+                 [      0,     0,     0,2*C#yzyz,       0,       0],
+                 [      0,     0,     0,       0,2*C#xzxz,       0],
+                 [      0,     0,     0,       0,       0,2*C#xyxy]] //
 
 macro T22T2(C,T) [ C#xxxx*T#xx + C#xxyy*T#yy + C#xxzz*T#zz,
 		               C#xxyy*T#xx + C#yyyy*T#yy + C#yyzz*T#zz,
@@ -116,15 +121,18 @@ macro T22grads(C,u) [ C#xxxx*dx(u#x) + C#xxyy*dy(u#y) + C#xxzz*dz(u#z),
                       C#xzxz*(dx(u#z)+dz(u#x)),
                       C#xyxy*(dx(u#y)+dy(u#x))] //
 
-macro T2T22T2(U,C,T)  ([ U#xx, U#yy, U#zz, 2*U#yz, 2*U#xz, 2*U#xy]'*T22T2(C,T))//
+macro tens2offdiagx2(U) [ U#xx, U#yy, U#zz, 2*U#yz, 2*U#xz, 2*U#xy] //
+macro gradsoffdiagx2(u)  [dx(u#x),dy(u#y),dz(u#z),(dy(u#z)+dz(u#y)),(dx(u#z)+dz(u#x)),(dx(u#y)+dy(u#x)) ] //
 
-macro T2T22grads(U,C,u) ([ U#xx, U#yy, U#zz, 2*U#yz, 2*U#xz, 2*U#xy]'*T22grads(C,u))//
+macro T2T22T2(U,C,T)  (tens2offdiagx2(U)'*T22T2(C,T))//
 
-macro gradsT22grads(uu,C,u) ([ dx(uu#x),dy(uu#y),dz(uu#z),0.5*(dy(uu#z)+dz(uu#y)),0.5*(dx(uu#z)+dz(uu#x)),0.5*(dx(uu#y)+dy(uu#x))]'*T22grads(C,u))//
+macro T2T22grads(U,C,u) (tens2offdiagx2(U)'*T22grads(C,u))//
 
-macro T2T2(U,T)  ([ U#xx, U#yy, U#zz, 2*U#yz, 2*U#xz, 2*U#xy]'*tens2(T))//
+macro gradsT22grads(uu,C,u) (gradsoffdiagx2(u)'*T22grads(C,u))//
 
-macro T2grads(U,u)  ([ U#xx, U#yy, U#zz, 2*U#yz, 2*U#xz, 2*U#xy]'*grads(u))//
+macro T2T2(U,T)  (tens2offdiagx2(U)'*tens2(T))//
+
+macro T2grads(U,u)  (tens2offdiagx2(U)'*grads(u))//
 
 macro T2T1(T,v)  ([ T#xx*v#x+T#xy*v#y+T#xz*v#z, T#xy*v#x+T#yy*v#y+T#yz*v#z,T#xz*v#x+T#yz*v#y+T#zz*v#z])//
 

@@ -108,15 +108,18 @@ macro T22grads(C,u) [ C#xxxx*dx(u#x) + C#xxyy*dy(u#y),
                       C#xxyy*dx(u#x) + C#yyyy*dy(u#y),
                       C#xyxy*(dy(u#x)+dx(u#y))] //
 
-macro T2T22T2(U,C,T)  ([ U#xx, U#yy, 2*U#xy]'*T22T2(C,T))//
+macro tens2offdiagx2(U) [ U#xx, U#yy, 2*U#xy] //
+macro gradsoffdiagx2(u) [ dx(uu#x),dy(uu#y),(dy(uu#x)+dx(uu#y))] //
 
-macro T2T22grads(U,C,u) ([ U#xx, U#yy, 2*U#xy]'*T22grads(C,u))//
+macro T2T22T2(U,C,T)  (tens2offdiagx2(U)'*T22T2(C,T))//
 
-macro gradsT22grads(uu,C,u) ([ dx(uu#x),dy(uu#y),0.5*(dy(uu#x)+dx(uu#y))]'*T22grads(C,u))//
+macro T2T22grads(U,C,u) (tens2offdiagx2(U)'*T22grads(C,u))//
 
-macro T2T2(U,T)  ([ U#xx, U#yy, 2*U#xy]'*tens2(T))//
+macro gradsT22grads(uu,C,u) (gradsoffdiagx2(u)'*T22grads(C,u))//
 
-macro T2grads(U,u)  ([ U#xx, U#yy, 2*U#xy]'*grads(u))//
+macro T2T2(U,T)  (tens2offdiagx2(U)'*tens2(T))//
+
+macro T2grads(U,u)  (tens2offdiagx2(U)'*grads(u))//
 
 macro T2T1(T,v)  ([ T#xx*v#x+T#xy*v#y, T#xy*v#x+T#yy*v#y])//
 

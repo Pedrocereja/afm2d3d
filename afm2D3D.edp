@@ -15,7 +15,7 @@ bool bcheckboundaries=false; // set to "true" to check the boundary regions
 bool bplotmesh=false; // set to "true" to plot the mesh
 bool bplotregion=false; // set to "true" to plot the physical regions
 bool bplotcoils=false; // set to "true" to plot the mesh associated with each coil (3D) or the current density associated to each coil (2D)
-bool bplotmag=false; // set to "true" to plot the magnetostatic problem results
+bool bplotmag=true; // set to "true" to plot the magnetostatic problem results
 bool bplotmec=false; // set to "true" to plot the mechanical problem results
 bool bplotforces=true; // set to "true" to plot nodal forces (only 2D)
 
@@ -35,7 +35,8 @@ real mu0 = 4*pi*1e-7; //vacuum permeability
 real nu0 = 1./mu0; // vacuum reluctivity
 real muiron = 1000*mu0; // iron permeablitiy
 real nuiron = 1./muiron; // iron reluctivity
-real mupm = 1.05*mu0; // permanent magnet permeability
+//real mupm = 1.05*mu0; // permanent magnet permeability
+real mupm = mu0; // permanent magnet permeability
 real nupm = 1./mupm; // permanent magnet reluctivity
 real mucoil = mu0; // coil permeability
 real nucoil = 1./mucoil; // coil reluctivity
@@ -425,11 +426,13 @@ if(1)
 	vec2(h) = nu*(vec2(b)-vec2(Br));
 	vec2(m) = nu0*(vec2(Br));
 
+	ThP0scal nu1=nu;
+
 	// Fields for the intrinsic forces
 	I1 = 0;
 	vec1(JJ) = vec1(I1*Jplus0)+vec1(I1*Jminus0)+vec1(I1*Jplus1)+vec1(I1*Jminus1);
 	nu = nupm*(regmagnet[0]+regmagnet[1])+nu0*(1-(regmagnet[0]+regmagnet[1]));
-	
+
 	matrix AA2=magstat(Thfetype1vec1,Thfetype1vec1);
 	real[int] BB2=magstat(0,Thfetype1vec1);
 	BB2 = -BB2;
@@ -459,6 +462,8 @@ if(1)
 	vec2(b2) = rot2(a2);
 	vec2(h2) = nu*(vec2(b2)-vec2(Br));
 	vec2(m2) = nu0*(vec2(Br));
+
+	ThP0scal nu2=nu;
 
 	if (bplotmag)
 	{
@@ -527,18 +532,23 @@ IFMACRO(DIM,3)
 	}
 ENDIFMACRO
 
+macro tm02D(h,b,m,nu) [h#x*b#x,h#y*b#y,0.5*(h#x*b#y+b#x*h#y)]-0.5*nu*[b#x*b#x+b#y*b#y,b#x*b#x+b#y*b#y,0] //
+macro tm12D(h,b,m,nu) tm02D(h,b,m,nu)+[b#x*m#x,b#y*m#y,0.5*(b#x*m#y+b#y*m#x)] //
+macro tm22D(h,b,m,nu) tm02D(h,b,m,nu)-[b#x*m#x,b#y*m#y,0.5*(b#x*m#y+b#y*m#x)]+[m#x*b#x+m#y*b#y,m#x*b#x+m#y*b#y,0]//
+macro tm32D(h,b,m,nu) tm02D(h,b,m,nu)+[m#x*b#x+m#y*b#y,m#x*b#x+m#y*b#y,0]//
+
 IFMACRO(DIM,2)
 	// Maxwell stress tensor for the whole system
-	tens2(tm0) = [hx*bx,hy*by,0.5*(hx*by+bx*hy)]-0.5*nu*[bx*bx+by*by,bx*bx+by*by,0];
-	tens2(tm1) = tens2(tm0)+[bx*mx,by*my,0.5*(bx*my+by*mx)];
-	tens2(tm2) = tens2(tm0)-[bx*mx,by*my,0.5*(bx*my+by*mx)]+[mx*bx+my*by,mx*bx+my*by,0];
-	tens2(tm3) = tens2(tm0)+[mx*bx+my*by,mx*bx+my*by,0];
+	tens2(tm0) = tm02D(h,b,m,nu1);
+	tens2(tm1) = tm12D(h,b,m,nu1);
+	tens2(tm2) = tm22D(h,b,m,nu1);
+	tens2(tm3) = tm32D(h,b,m,nu1);
 
 	// Maxwell stress tensors for intrinsic force
-	tens2(tm0i) = [h2x*b2x,h2y*b2y,0.5*(h2x*b2y+b2x*h2y)]-0.5*nu0*[b2x*b2x+b2y*b2y,b2x*b2x+b2y*b2y,0];
-	tens2(tm1i) = tens2(tm0i)+[b2x*m2x,b2y*m2y,0.5*(b2x*m2y+b2y*m2x)];
-	tens2(tm2i) = tens2(tm0i)-[b2x*m2x,b2y*m2y,0.5*(b2x*m2y+b2y*m2x)]+[m2x*b2x+m2y*b2y,m2x*b2x+m2y*b2y,0];
-	tens2(tm3i) = tens2(tm0i)+[m2x*b2x+m2y*b2y,m2x*b2x+m2y*b2y,0];
+	tens2(tm0i) = tm02D(h2,b2,m2,nu2);
+	tens2(tm1i) = tm12D(h2,b2,m2,nu2);
+	tens2(tm2i) = tm22D(h2,b2,m2,nu2);
+	tens2(tm3i) = tm32D(h2,b2,m2,nu2);
 
 ENDIFMACRO
 
@@ -590,7 +600,7 @@ IFMACRO(DIM,2)
 		for (int i=0; i<ncomps; i++){
 			surfmag[i] = flagdofregionmagnet0[2*i]*nodesurfx[][2*i];
 		}
-			
+
 		real surfmagnet = surfmag.sum;
 
 		real densforcglob = forcglob/surfmagnet;
@@ -599,7 +609,7 @@ IFMACRO(DIM,2)
 		ThP1vec vec(forct1) = [0,densforcglob];
 
 		varf forceglob(vec(u),vec(uu)) =  intnd(Th)((regmagnet[0]+regmagnet[1])*vec(forct1)'*vec(uu));
-		ThP1vec vec(forceglobsurf); 
+		ThP1vec vec(forceglobsurf);
 		forceglobsurfx[] = forceglob(0,ThP1vec);
 
 		savevtk(DIRres+"forcglob"+Stringification(t0)+".vtu",Th#namereg1#namereg2,[forceglobsurfx,forceglobsurfy,0],order=order1,dataname=Stringification(t0));

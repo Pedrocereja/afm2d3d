@@ -23,6 +23,7 @@ bool bperiodicity=true; // set to "true" to apply periodicity condition
 bool bcheckperiodicitydofs = false; // set to "true" to check the periodicity dofs
 bool bchecksupport=true;
 bool bcomputeinterp=1;
+bool bintrinsic = false;
 
 real Itot = 474.67; // total current in coils section (A) (in the considered configuration, phase U (or 0) has null current, and phase V (or 1) and W (or 2) carry the same current (up to the sign))
 real Jimp = 7.8e5; // Imposed current density
@@ -317,6 +318,7 @@ ThP0tens2 tens2(tm0); // Maxwell stress tensor without magnetostriction
 ThP0tens2 tens2(tm1); // Maxwell stress tensor with constant material line circulation of M
 ThP0tens2 tens2(tm2); // Maxwell stress tensor with constant material surface flux of M
 ThP0tens2 tens2(tm3); // Maxwell stress tensor with constant magnetic moment
+ThP0tens2 tens2(tm0i), tens2(tm1i), tens2(tm2i), tens2(tm3i); // Maxwell stress tensor for intrinsic force
 
 ThP0tens22 tens22(C); //stiffness tensor
 
@@ -371,7 +373,7 @@ vec1firstcomp(adir)[](:)=0; //define a value for each dof involved in the Dirich
 SetDirichletValue(real,Th,fetype1,vec1,magstat,vec1firstcomp(adir)[])
 SetDirichletFlag(real,Th,fetype1,vec1,magstat)
 
-Thfetype1vec1 vec1(a);
+Thfetype1vec1 vec1(a), vec1(a2);;
 varf magstat(vec1(a),vec1(aa)) = intnd(Th)(nu*rot2(a)'*rot2(aa))
 										- intnd(Th)(vec1(JJ)'*vec1(aa))
 										- intnd(Th)(nu*vec2(Br)'*rot2(aa))
@@ -418,19 +420,59 @@ if(1)
 	vec1firstcomp(a)[]=MatExtmagstat*solper; //extends the solution to the original problem
 	cout <<"end span to original system" << endl;
 
-}
+	ThP0vec2 vec2(b),vec2(h),vec2(m);
+	vec2(b)=rot2(a);
+	vec2(h) = nu*(vec2(b)-vec2(Br));
+	vec2(m) = nu0*(vec2(Br));
 
-ThP0vec2 vec2(b),vec2(h),vec2(m);
-vec2(b)=rot2(a);
-vec2(h) = nu*(vec2(b)-vec2(Br));
-vec2(m) = nu0*(vec2(Br));
+	// Fields for the intrinsic forces
+	I1 = 0;
+	vec1(JJ) = vec1(I1*Jplus0)+vec1(I1*Jminus0)+vec1(I1*Jplus1)+vec1(I1*Jminus1);
+	nu = nupm*(regmagnet[0]+regmagnet[1])+nu0*(1-(regmagnet[0]+regmagnet[1]));
+	
+	matrix AA2=magstat(Thfetype1vec1,Thfetype1vec1);
+	real[int] BB2=magstat(0,Thfetype1vec1);
+	BB2 = -BB2;
+	RedSysDirichlet(real, AA2, BB2, Thfetype1vec1magstatdirflag, Thfetype1vec1magstatdirflag, Thfetype1vec1magstatdirvalue)
+
+	matrix Atemp2=AA2*MatExtmagstat;
+
+	AA2=MatExtmagstat'*Atemp2; //restricted matrix
+	real[int] BB2rest=MatExtmagstat'*BB2; //restricted RHS
+
+	set(AA2,solver=CG);
+
+	cout << " end build restricted (iso and periodicity) system" << endl;
+
+	cout <<"solve" << endl;
+	real[int] solper2(BB2rest.n);
+	solper2=AA2^-1*BB2rest;
+
+	cout <<"end solve" << endl;
+
+	cout <<"span to original system" << endl;
+
+	vec1firstcomp(a2)[]=MatExtmagstat*solper2; //extends the solution to the original problem
+
+	// Magnetic fields - Only magnets with air surrounding
+	ThP0vec2 vec2(b2), vec2(h2), vec2(m2);
+	vec2(b2) = rot2(a2);
+	vec2(h2) = nu*(vec2(b2)-vec2(Br));
+	vec2(m2) = nu0*(vec2(Br));
+
+	if (bplotmag)
+	{
+		plot(nu,wait=1,fill=1,value=1,cmm="nu (two magnets)");
+		plot(vec(Br),wait=1,fill=1,value=1,cmm="Br (two magnets)");
+		plot(vec(b2),wait=1,fill=1,value=1,cmm="B (two magnets)");
+		plot(vec(h2),wait=1,fill=1,value=1,cmm="H (two magnets)");
+	}
 
 IFMACRO(DIM,2)
 	savevtk(DIRres+"A.vtu",Th,a,order=order1,dataname="a");
 	savevtk(DIRres+"B.vtu",Th,[bx,by,0],order=order0,dataname="b");
 	savevtk(DIRres+"M.vtu",Th,[hx,hy,0],order=order0,dataname="m");
 	savevtk(DIRres+"H.vtu",Th,[mx,my,0],order=order0,dataname="h");
-
 
 	if(bplotmag) plot(vec1(JJ),wait=1,value=1,fill=1,cmm="JJ");
 	if(bplotmag) plot(vec(Br),wait=1,fill=1,value=1,cmm="Br");
@@ -486,27 +528,82 @@ IFMACRO(DIM,3)
 ENDIFMACRO
 
 IFMACRO(DIM,2)
-	tens2(tm0) = [hx*bx,hy*by,0.5*(hx*by+bx*hy)]-0.5*nu0*[bx*bx+by*by,bx*bx+by*by,0];
+	// Maxwell stress tensor for the whole system
+	tens2(tm0) = [hx*bx,hy*by,0.5*(hx*by+bx*hy)]-0.5*nu*[bx*bx+by*by,bx*bx+by*by,0];
 	tens2(tm1) = tens2(tm0)+[bx*mx,by*my,0.5*(bx*my+by*mx)];
 	tens2(tm2) = tens2(tm0)-[bx*mx,by*my,0.5*(bx*my+by*mx)]+[mx*bx+my*by,mx*bx+my*by,0];
 	tens2(tm3) = tens2(tm0)+[mx*bx+my*by,mx*bx+my*by,0];
+
+	// Maxwell stress tensors for intrinsic force
+	tens2(tm0i) = [h2x*b2x,h2y*b2y,0.5*(h2x*b2y+b2x*h2y)]-0.5*nu0*[b2x*b2x+b2y*b2y,b2x*b2x+b2y*b2y,0];
+	tens2(tm1i) = tens2(tm0i)+[b2x*m2x,b2y*m2y,0.5*(b2x*m2y+b2y*m2x)];
+	tens2(tm2i) = tens2(tm0i)-[b2x*m2x,b2y*m2y,0.5*(b2x*m2y+b2y*m2x)]+[m2x*b2x+m2y*b2y,m2x*b2x+m2y*b2y,0];
+	tens2(tm3i) = tens2(tm0i)+[m2x*b2x+m2y*b2y,m2x*b2x+m2y*b2y,0];
+
 ENDIFMACRO
 
 IFMACRO(DIM,3)
+	// Maxwell stress tensor for the whole system
 	tens2(tm0) = [hx*bx,hy*by,hz*bz,0.5*(hy*bz+hz*by),0.5*(hx*bz+hz*bx),0.5*(hx*by+bx*hy)]-0.5*nu0*[bx*bx+by*by+bz*bz,bx*bx+by*by+bz*bz,bx*bx+by*by+bz*bz,0,0,0];
 	tens2(tm1) = tens2(tm0)+[bx*mx,by*my,bz*mz,0.5*(by*mz+bz*my),0.5*(bx*mz+bz*mx),0.5*(bx*my+by*mx)];
 	tens2(tm2) = tens2(tm0)-[bx*mx,by*my,bz*mz,0.5*(by*mz+bz*my),0.5*(bx*mz+bz*mx),0.5*(bx*my+by*mx)]+[mx*bx+my*by+mz*bz,mx*bx+my*by+mz*bz,mx*bx+my*by+mz*bz,0,0,0];
 	tens2(tm3) = tens2(tm0)+[mx*bx+my*by+mz*bz,mx*bx+my*by+mz*bz,mx*bx+my*by+mz*bz,0,0,0];
+
+	// Maxwell stress tensors for intrinsic force
+	tens2(tm0i) = [h2x*b2x,h2y*b2y,h2z*b2z,0.5*(h2y*b2z+h2z*b2y),0.5*(h2x*b2z+h2z*b2x),0.5*(h2x*b2y+b2x*h2y)]-0.5*nu0*[b2x*b2x+b2y*b2y+b2z*b2z,b2x*b2x+b2y*b2y+b2z*b2z,b2x*b2x+b2y*b2y+b2z*b2z,0,0,0];
+	tens2(tm1i) = tens2(tm0i)+[b2x*m2x,b2y*m2y,b2z*m2z,0.5*(b2y*m2z+b2z*m2y),0.5*(b2x*m2z+b2z*m2x),0.5*(b2x*m2y+b2y*m2x)];
+	tens2(tm2i) = tens2(tm0i)-[b2x*m2x,b2y*m2y,b2z*m2z,0.5*(b2y*m2z+b2z*m2y),0.5*(b2x*m2z+b2z*m2x),0.5*(b2x*m2y+b2y*m2x)]+[m2x*b2x+m2y*b2y+m2z*b2z,m2x*b2x+m2y*b2y+m2z*b2z,m2x*b2x+m2y*b2y+m2z*b2z,0,0,0];
+	tens2(tm3i) = tens2(tm0i)+[m2x*b2x+m2y*b2y+m2z*b2z,m2x*b2x+m2y*b2y+m2z*b2z,m2x*b2x+m2y*b2y+m2z*b2z,0,0,0];
 ENDIFMACRO
+}
 
 IFMACRO(DIM,2)
 	varf nodesurface(vec(u),vec(uu)) =  intnd(Th)(uux+uuy); //to compute the surface associated with each node ()
 	ThP1vec vec(nodesurf);
 	nodesurfx[]=nodesurface(0,ThP1vec);
 	macro forcnod(namereg1,namereg2,t0)
-		varf forcemag(vec(u),vec(uu)) =  intnd(Th)(-T2grads(tm2,uu));
-		ThP1vec vec(forct);
+		varf forcemag(vec(u),vec(uu)) =  intnd(Th)(-T2grads(tm0,uu));
+		varf forcemagintr(vec(u),vec(uu)) =  intnd(Th)(-T2grads(tm0i,uu)); /* Intrinsic forces */
+		varf forcemaginte(vec(u),vec(uu)) =  intnd(Th)(-T2grads(tm0,uu)+T2grads(tm0i,uu)); /* Interaction forces */
+
+		ThP1vec vec(forct), vec(forctintr), vec(forctinte);
 		forctx[]=forcemag(0,ThP1vec);
+		forctintrx[] = forcemagintr(0,ThP1vec);
+		forctintex[] = forcemaginte(0,ThP1vec);
+
+		int[int]  magnet0 = [magnet[0]];
+		FlagDofRegion(Th,P1,vec,magnet0,usupportcoef,magnet0); /* Select dofs for 1 magnet*/
+
+		/* Global force for one magnet*/
+		int ncompft = (forctx.n/3);
+		real[int] forcmagtot(ncompft);
+		for (int i=0; i<ncompft; i++){
+			forcmagtot[i] = flagdofregionmagnet0[2*i+1]*forctx[][2*i+1];
+		}
+
+		real forcglob= forcmagtot.sum;
+		cout << "Glob forc (1 magnet) = " << forcglob << endl;
+
+		/* Surface of one magnet*/
+		int ncomps = (nodesurfx.n/3);
+		real[int] surfmag(ncomps);
+		for (int i=0; i<ncomps; i++){
+			surfmag[i] = flagdofregionmagnet0[2*i]*nodesurfx[][2*i];
+		}
+			
+		real surfmagnet = surfmag.sum;
+
+		real densforcglob = forcglob/surfmagnet;
+		cout << " Dens forc glob = " << densforcglob << endl;
+
+		ThP1vec vec(forct1) = [0,densforcglob];
+
+		varf forceglob(vec(u),vec(uu)) =  intnd(Th)((regmagnet[0]+regmagnet[1])*vec(forct1)'*vec(uu));
+		ThP1vec vec(forceglobsurf); 
+		forceglobsurfx[] = forceglob(0,ThP1vec);
+
+		savevtk(DIRres+"forcglob"+Stringification(t0)+".vtu",Th#namereg1#namereg2,[forceglobsurfx,forceglobsurfy,0],order=order1,dataname=Stringification(t0));
+
 		real[int] ftotmagnet(magnet.n);
 		for(int im=0;im<magnet.n;++im)
 		{
@@ -532,12 +629,14 @@ IFMACRO(DIM,2)
 
 		}
 		savevtk(DIRres+"forc"+Stringification(t0)+".vtu",Th#namereg1#namereg2,[forctx,forcty,0],order=order1,dataname=Stringification(t0));
+		savevtk(DIRres+"forcintr"+Stringification(t0)+".vtu",Th#namereg1#namereg2,[forctintrx,forctintry,0],order=order1,dataname=Stringification(t0));
+		savevtk(DIRres+"forcinter"+Stringification(t0)+".vtu",Th#namereg1#namereg2,[forctintex,forctintey,0],order=order1,dataname=Stringification(t0));
 		savevtk(DIRres+"nodesurf"+Stringification(t0)+".vtu",Th#namereg1#namereg2,[nodesurfx,nodesurfy,0],order=order1,dataname=Stringification(nodesurf));
 		forctx[]./=nodesurfx[]; /*force density = nodal force / node surface */
 		savevtk(DIRres+"densforc"+Stringification(t0)+".vtu",Th#namereg1#namereg2,[forctx,forcty,0],order=order1,dataname=Stringification(denst0));
 	//
 
-	forcnod(,,tm2);
+	forcnod(,,tm0);
 
 
 ENDIFMACRO
@@ -695,7 +794,8 @@ IFMACRO(ELAST,1)
 
 	macro varfelast(rotor,magnet)
 	varf elast(vec(u),vec(uu))=  intnd(Th)((reg#rotor#magnet)*gradsT22grads(u,C,uu))
-	                          + intnd(Th)((reg#rotor#magnet)*T2grads(tm0,uu))
+	                          + intnd(Th)((reg#rotor#magnet)*(-T2grads(tm0,uu)+T2grads(tm0i,uu))) /* Intrinsic force */
+	                         /*- intnd(Th)((regmagnet[0]+regmagnet[1])*(vec(forct1)'*vec(uu)))*/ /* Global force applied in magnets*/
 					                   ;
 	// EOM
 
@@ -798,7 +898,7 @@ IFMACRO(ELAST,1)
 	ENDIFMACRO
 
 
-	dirres(rotor,magnet,tm0);  // Choose between (rotor,magnet) or (stator,coil)
+	dirres(rotor,magnet,tm1);  // Choose between (rotor,magnet) or (stator,coil)
 
 
 ENDIFMACRO

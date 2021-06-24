@@ -537,6 +537,11 @@ macro tm12D(h,b,m,nu) tm02D(h,b,m,nu)+[b#x*m#x,b#y*m#y,0.5*(b#x*m#y+b#y*m#x)] //
 macro tm22D(h,b,m,nu) tm02D(h,b,m,nu)-[b#x*m#x,b#y*m#y,0.5*(b#x*m#y+b#y*m#x)]+[m#x*b#x+m#y*b#y,m#x*b#x+m#y*b#y,0]//
 macro tm32D(h,b,m,nu) tm02D(h,b,m,nu)+[m#x*b#x+m#y*b#y,m#x*b#x+m#y*b#y,0]//
 
+macro tm03D(h,b,m,nu) [h#x*b#x,h#y*b#y,h#z*b#z,0.5*(h#y*b#z+h#z*b#y),0.5*(h#x*b#z+h#z*b#x),0.5*(h#x*b#y+b#x*h#y)]-0.5*nu*[b#x*b#x+b#y*b#y+b#z*b#z,b#x*b#x+b#y*b#y+b#z*b#z,b#x*b#x+b#y*b#y+b#z*b#z,0,0,0] //
+macro tm13D(h,b,m,nu) tm03D(h,b,m,nu)+[b#x*m#x,b#y*m#y,b#z*m#z,0.5*(b#y*m#z+b#z*m#y),0.5*(b#x*m#z+b#z*m#x),0.5*(b#x*m#y+b#y*m#x)] //
+macro tm23D(h,b,m,nu) tm03D(h,b,m,nu)-[b#x*m#x,b#y*m#y,b#z*m#z,0.5*(b#y*m#z+b#z*m#y),0.5*(b#x*m#z+b#z*m#x),0.5*(b#x*m#y+b#y*m#x)]+[m#x*b#x+m#y*b#y+m#z*b#z,m#x*b#x+m#y*b#y+m#z*b#z,m#x*b#x+m#y*b#y+m#z*b#z,0,0,0]//
+macro tm33D(h,b,m,nu) tm03D(h,b,m,nu)+[m#x*b#x+m#y*b#y+m#z*b#z,m#x*b#x+m#y*b#y+m#z*b#z,m#x*b#x+m#y*b#y+m#z*b#z,0,0,0]//
+
 IFMACRO(DIM,2)
 	// Maxwell stress tensor for the whole system
 	tens2(tm0) = tm02D(h,b,m,nu1);
@@ -553,17 +558,17 @@ IFMACRO(DIM,2)
 ENDIFMACRO
 
 IFMACRO(DIM,3)
-	// Maxwell stress tensor for the whole system
-	tens2(tm0) = [hx*bx,hy*by,hz*bz,0.5*(hy*bz+hz*by),0.5*(hx*bz+hz*bx),0.5*(hx*by+bx*hy)]-0.5*nu0*[bx*bx+by*by+bz*bz,bx*bx+by*by+bz*bz,bx*bx+by*by+bz*bz,0,0,0];
-	tens2(tm1) = tens2(tm0)+[bx*mx,by*my,bz*mz,0.5*(by*mz+bz*my),0.5*(bx*mz+bz*mx),0.5*(bx*my+by*mx)];
-	tens2(tm2) = tens2(tm0)-[bx*mx,by*my,bz*mz,0.5*(by*mz+bz*my),0.5*(bx*mz+bz*mx),0.5*(bx*my+by*mx)]+[mx*bx+my*by+mz*bz,mx*bx+my*by+mz*bz,mx*bx+my*by+mz*bz,0,0,0];
-	tens2(tm3) = tens2(tm0)+[mx*bx+my*by+mz*bz,mx*bx+my*by+mz*bz,mx*bx+my*by+mz*bz,0,0,0];
+	// Maxwell stress tensor for the whole system - 3D
+	tens2(tm0) = tm03D(h,b,m,nu1);
+	tens2(tm1) = tm13D(h,b,m,nu1);
+	tens2(tm2) = tm23D(h,b,m,nu1);
+	tens2(tm3) = tm33D(h,b,m,nu1);
 
 	// Maxwell stress tensors for intrinsic force
-	tens2(tm0i) = [h2x*b2x,h2y*b2y,h2z*b2z,0.5*(h2y*b2z+h2z*b2y),0.5*(h2x*b2z+h2z*b2x),0.5*(h2x*b2y+b2x*h2y)]-0.5*nu0*[b2x*b2x+b2y*b2y+b2z*b2z,b2x*b2x+b2y*b2y+b2z*b2z,b2x*b2x+b2y*b2y+b2z*b2z,0,0,0];
-	tens2(tm1i) = tens2(tm0i)+[b2x*m2x,b2y*m2y,b2z*m2z,0.5*(b2y*m2z+b2z*m2y),0.5*(b2x*m2z+b2z*m2x),0.5*(b2x*m2y+b2y*m2x)];
-	tens2(tm2i) = tens2(tm0i)-[b2x*m2x,b2y*m2y,b2z*m2z,0.5*(b2y*m2z+b2z*m2y),0.5*(b2x*m2z+b2z*m2x),0.5*(b2x*m2y+b2y*m2x)]+[m2x*b2x+m2y*b2y+m2z*b2z,m2x*b2x+m2y*b2y+m2z*b2z,m2x*b2x+m2y*b2y+m2z*b2z,0,0,0];
-	tens2(tm3i) = tens2(tm0i)+[m2x*b2x+m2y*b2y+m2z*b2z,m2x*b2x+m2y*b2y+m2z*b2z,m2x*b2x+m2y*b2y+m2z*b2z,0,0,0];
+	tens2(tm0i) = tm03D(h2,b2,m2,nu2);
+	tens2(tm1i) = tm13D(h2,b2,m2,nu2);
+	tens2(tm2i) = tm23D(h2,b2,m2,nu2);
+	tens2(tm3i) = tm33D(h2,b2,m2,nu2);
 ENDIFMACRO
 }
 
@@ -614,7 +619,7 @@ IFMACRO(DIM,2)
 		forceglobsurfx[] = forceglob(0,ThP1vec);
 
 		savevtk(DIRres+"forcglob"+Stringification(t0)+".vtu",Th#namereg1#namereg2,[forceglobsurfx,forceglobsurfy,0],order=order1,dataname=Stringification(t0));
-
+		
 		varf elementsurf(a,aa)=  intnd(Th)(aa);
 		ThP0scal esurf;
 		esurf[]= elementsurf(0,ThP0scal);
@@ -674,15 +679,24 @@ IFMACRO(COMP2D3D,1)
 	ThP1vec vec(nodevol);
 	nodevolx[]=nodevol(0,ThP1vec);
 
-	macro forcnod(rotor,magnet,t0)
-		varf forcemag(vec(u),vec(uu)) =  intnd(Th)(-T2grads(tm2,uu));
-		ThP1vec vec(forct);
+	macro forcnod(namereg1,namereg2,t0)
+		varf forcemag(vec(u),vec(uu)) =  intnd(Th)(-T2grads(tm0,uu));
+		varf forcemagintr(vec(u),vec(uu)) =  intnd(Th)(-T2grads(tm0i,uu)); /* Intrinsic forces */
+		varf forcemaginte(vec(u),vec(uu)) =  intnd(Th)(-T2grads(tm0,uu)+T2grads(tm0i,uu)); /* Interaction forces */
+		
+		ThP1vec vec(forct), vec(forctintr), vec(forctinte);
 		forctx[]=forcemag(0,ThP1vec);
-		savevtk(DIRres+"forc"+Stringification(t0)+".vtu",Th#rotor#magnet,[forctx,forcty,forctz],order=order1,dataname=Stringification(t0));
-		savevtk(DIRres+"nodevol"+Stringification(t0)+".vtu",Th#rotor#magnet,[nodevolx,nodevoly,nodevolz],order=order1,dataname=Stringification(nodevol));
-		forctx[]./=nodevolx[]; /*force density = nodal force / node volume */
-		savevtk(DIRres+"densforc"+Stringification(t0)+".vtu",Th#rotor#magnet,[forctx,forcty,forctz],order=order1,dataname=Stringification(denst0));
+		forctintrx[]=forcemagintr(0,ThP1vec);
+		forctintex[] = forcemaginte(0,ThP1vec);
 
+		savevtk(DIRres+"forc"+Stringification(t0)+".vtu",Th#namereg1#namereg2,vec(forct),order=order1,dataname=Stringification(t0));
+		savevtk(DIRres+"forcintr"+Stringification(t0)+".vtu",Th#namereg1#namereg2,vec(forctintr),order=order1,dataname=Stringification(t0));
+		savevtk(DIRres+"forcinter"+Stringification(t0)+".vtu",Th#namereg1#namereg2,vec(forctinte),order=order1,dataname=Stringification(t0));
+		savevtk(DIRres+"nodevol"+Stringification(t0)+".vtu",Th#namereg1#namereg2,[nodevolx,nodevoly,nodevolz],order=order1,dataname=Stringification(nodevol));
+		forctx[]./=nodevolx[]; /*force density = nodal force / node volume */
+		savevtk(DIRres+"densforc"+Stringification(t0)+".vtu",Th#namereg1#namereg2,[forctx,forcty,forctz],order=order1,dataname=Stringification(denst0));
+		
+		/*
 		FEspace(Th23,P0,vec);
 		Th23P0vec vec(b3)=vec(b),vec(b3cyl);
 		savevtk(DIRres+"B3.vtu",Th23,vec(b3),order=order0,dataname="b3");
@@ -693,7 +707,7 @@ IFMACRO(COMP2D3D,1)
 		vec(uz)=[0,0,1];
 
 		vec(b3cyl)=[vec(-b3)'*vec(ut),vec(-b3)'*vec(uz),vec(b3)'*vec(ur)]; /*manual sign change*/
-		FEspace(Th23d,P0,vec);
+		/*FEspace(Th23d,P0,vec);
 		Th23dP0vec vec(b23d);
 		b23dx[]=b3cylx[];
 		savevtk(DIRres+"B23d.vtu",Th23d,[b23dx,b23dy,b23dz],order=order0,dataname="b23d");
@@ -702,12 +716,12 @@ IFMACRO(COMP2D3D,1)
 		savevtk(DIRres+"f3.vtu",Th23,vec(f3),order=order0,dataname="f3");
 
 		vec(f3cyl)=[vec(-f3)'*vec(ut),vec(-f3)'*vec(uz),vec(f3)'*vec(ur)]; /*manual sign change*/
-		Th23dP0vec vec(f23d);
+		/*Th23dP0vec vec(f23d);
 		f23dx[]=f3cylx[];
-		savevtk(DIRres+"f23d.vtu",Th23d,[f23dx,f23dy,f23dz],order=order0,dataname="f23d");
+		savevtk(DIRres+"f23d.vtu",Th23d,[f23dx,f23dy,f23dz],order=order0,dataname="f23d");*/
 
 	//
-	forcnod(,,tm2);
+	forcnod(,,tm0);
 
 ENDIFMACRO
 
@@ -818,8 +832,8 @@ IFMACRO(ELAST,1)
 
 	macro varfelast(rotor,magnet)
 	varf elast(vec(u),vec(uu))=  intnd(Th)((reg#rotor#magnet)*gradsT22grads(u,C,uu))
-	                          + intnd(Th)((reg#rotor#magnet)*(-T2grads(tm0,uu)+T2grads(tm0i,uu))) /* Intrinsic force */
-	                         /*- intnd(Th)((regmagnet[0]+regmagnet[1])*(vec(forct1)'*vec(uu)))*/ /* Global force applied in magnets*/
+	                         + intnd(Th)((reg#rotor#magnet)*(-T2grads(tm0,uu)+T2grads(tm0i,uu))) /* Intrinsic force */
+	                         /*- intnd(Th)((regmagnet[0])*vec(forct1)'*vec(uu))*/ /* Global force applied in magnets*/
 					                   ;
 	// EOM
 

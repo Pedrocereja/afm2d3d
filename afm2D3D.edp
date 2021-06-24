@@ -15,13 +15,13 @@ bool bcheckboundaries=false; // set to "true" to check the boundary regions
 bool bplotmesh=false; // set to "true" to plot the mesh
 bool bplotregion=false; // set to "true" to plot the physical regions
 bool bplotcoils=false; // set to "true" to plot the mesh associated with each coil (3D) or the current density associated to each coil (2D)
-bool bplotmag=true; // set to "true" to plot the magnetostatic problem results
+bool bplotmag=0; // set to "true" to plot the magnetostatic problem results
 bool bplotmec=false; // set to "true" to plot the mechanical problem results
-bool bplotforces=true; // set to "true" to plot nodal forces (only 2D)
+bool bplotforces=0; // set to "true" to plot nodal forces (only 2D)
 
 bool bperiodicity=true; // set to "true" to apply periodicity condition
 bool bcheckperiodicitydofs = false; // set to "true" to check the periodicity dofs
-bool bchecksupport=true;
+bool bchecksupport=0;
 bool bcomputeinterp=1;
 bool bintrinsic = false;
 
@@ -585,7 +585,7 @@ IFMACRO(DIM,2)
 		FlagDofRegion(Th,P1,vec,magnet0,usupportcoef,magnet0); /* Select dofs for 1 magnet*/
 
 		/* Global force for one magnet*/
-		int ncompft = (forctx.n/3);
+		int ncompft = (forctx[].n/2); /* 2 components (x,y)*/
 		real[int] forcmagtot(ncompft);
 		for (int i=0; i<ncompft; i++){
 			forcmagtot[i] = flagdofregionmagnet0[2*i+1]*forctx[][2*i+1];
@@ -595,13 +595,14 @@ IFMACRO(DIM,2)
 		cout << "Glob forc (1 magnet) = " << forcglob << endl;
 
 		/* Surface of one magnet*/
-		int ncomps = (nodesurfx.n/3);
+		int ncomps = (nodesurfx[].n/2); /* 2 components (x,y)*/
 		real[int] surfmag(ncomps);
 		for (int i=0; i<ncomps; i++){
-			surfmag[i] = flagdofregionmagnet0[2*i]*nodesurfx[][2*i];
+			surfmag[i] = flagdofregionmagnet0[2*i]*nodesurfx[][2*i]; /*includes external layer */
 		}
 
 		real surfmagnet = surfmag.sum;
+		cout << " surfmagnet = " << surfmagnet << endl;
 
 		real densforcglob = forcglob/surfmagnet;
 		cout << " Dens forc glob = " << densforcglob << endl;
@@ -614,17 +615,30 @@ IFMACRO(DIM,2)
 
 		savevtk(DIRres+"forcglob"+Stringification(t0)+".vtu",Th#namereg1#namereg2,[forceglobsurfx,forceglobsurfy,0],order=order1,dataname=Stringification(t0));
 
+		varf elementsurf(a,aa)=  intnd(Th)(aa);
+		ThP0scal esurf;
+		esurf[]= elementsurf(0,ThP0scal);
+
 		real[int] ftotmagnet(magnet.n);
 		for(int im=0;im<magnet.n;++im)
 		{
 			FlagDofRegion(Th,P1,scal,magnet[im],[1],onmagnet);
 			ThP1scal onmagnet;
 			onmagnet[]=flagdofregiononmagnet;
-			plot(onmagnet,wait=1,fill=1,value=1,cmm=" onmagnet ");
+			/*plot(onmagnet,wait=1,fill=1,value=1,cmm=" onmagnet ");*/
 			ThP0scal magnetandlayer=(onmagnet>0);
-			plot(magnetandlayer,wait=1,fill=1,value=1,cmm=" magnetandlayer ");
-			ftotmagnet(im) =  intnd(Th)(-magnetandlayer*T2grads(tm2,uu));
+			/*plot(magnetandlayer,wait=1,fill=1,value=1,cmm=" magnetandlayer ");*/
+
+			/*ftotmagnet(im) =  intnd(Th)(-magnetandlayer*T2grads(tm2,uu));*/ /* what is "uu" here? */
+
+			cout << "Glob forc (forctx) magnet " << im << " = " << intnd(Th)(forctx*magnetandlayer/esurf) << endl;
+			cout << "Glob forc (forcty) magnet " << im << " = " << intnd(Th)(forcty*magnetandlayer/esurf) << endl;
+
+			/*cout << "surface of magnet " << im << " = " << intnd(Th)(magnetandlayer) << endl;*/
+			cout << "surface of magnet " << im << " = " << intnd(Th)(regmagnet[im]) << endl;
+
 		}
+
 
 		if(bplotforces)
 		{

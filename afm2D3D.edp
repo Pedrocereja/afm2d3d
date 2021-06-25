@@ -863,9 +863,9 @@ IFMACRO(ELAST,1)
 
 	macro varfelast(rotor,magnet)
 	varf elast(vec(u),vec(uu))=  intnd(Th)(gradsT22grads(u,C,uu))
-	                         + intnd(Th)((T2grads(tm0,uu)-T2grads(tm0i,uu))) /* Intrinsic force */
+	                         /*+ intnd(Th)((T2grads(tm0,uu)-T2grads(tm0i,uu)))*/ /* Intrinsic force */
 	                         /*- intnd(Th)((regmagnet[0])*vec(forct1)'*vec(uu))*/ /* Global force applied in magnets*/
-													 /*-intnd(Th)((reg#rotor#magnet)*forcglobtm0magnetsandrotory/globvol*uuy)*/ /* y-component of global force applied as uniform force density in magnets and rotor*/
+													 -intnd(Th)((reg#rotor#magnet)*forcglobtm0magnetsandrotory/globvol*uuy) /* y-component of global force applied as uniform force density in magnets and rotor*/
 					                   ;
 	// EOM
 

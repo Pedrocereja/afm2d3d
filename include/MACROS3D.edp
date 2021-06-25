@@ -128,7 +128,7 @@ macro T2T22T2(U,C,T)  (tens2offdiagx2(U)'*T22T2(C,T))//
 
 macro T2T22grads(U,C,u) (tens2offdiagx2(U)'*T22grads(C,u))//
 
-macro gradsT22grads(uu,C,u) (gradsoffdiagx2(u)'*T22grads(C,u))//
+macro gradsT22grads(uu,C,u) (gradsoffdiagx2(uu)'*T22grads(C,u))//
 
 macro T2T2(U,T)  (tens2offdiagx2(U)'*tens2(T))//
 

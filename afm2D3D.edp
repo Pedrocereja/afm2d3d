@@ -44,7 +44,7 @@ real nucoil = 1./mucoil; // coil reluctivity
 IFMACRO(DIM,2)
 	include "afm2D.def"
 	include "afm2D.init"
-	include "../include/MACROS2D.edp"
+	include "include/MACROS2D.edp"
 	// directory where the results should be saved
 	string DIRres="results/2D/";
 
@@ -134,7 +134,7 @@ ENDIFMACRO
 IFMACRO(DIM,3)
 	include "afm3D.def"
 	include "afm3D.init"
-	include "../include/MACROS3D.edp"
+	include "include/MACROS3D.edp"
 	// directory where the results should be saved
 	string DIRres="results/3D/";
 
@@ -576,97 +576,126 @@ IFMACRO(DIM,2)
 	varf nodesurface(vec(u),vec(uu)) =  intnd(Th)(uux+uuy); //to compute the surface associated with each node ()
 	ThP1vec vec(nodesurf);
 	nodesurfx[]=nodesurface(0,ThP1vec);
-	macro forcnod(namereg1,namereg2,t0)
-		varf forcemag(vec(u),vec(uu)) =  intnd(Th)(-T2grads(tm0,uu));
-		varf forcemagintr(vec(u),vec(uu)) =  intnd(Th)(-T2grads(tm0i,uu)); /* Intrinsic forces */
-		varf forcemaginte(vec(u),vec(uu)) =  intnd(Th)(-T2grads(tm0,uu)+T2grads(tm0i,uu)); /* Interaction forces */
 
-		ThP1vec vec(forct), vec(forctintr), vec(forctinte);
-		forctx[]=forcemag(0,ThP1vec);
-		forctintrx[] = forcemagintr(0,ThP1vec);
-		forctintex[] = forcemaginte(0,ThP1vec);
+	macro forcnod(t0)
+		varf forcemag(vec(u),vec(uu)) =  intnd(Th)(-T2grads(t0,uu));
+		varf forcemagintr(vec(u),vec(uu)) =  intnd(Th)(-T2grads(t0#i,uu)); /* Intrinsic forces */
 
-		int[int]  magnet0 = [magnet[0]];
-		FlagDofRegion(Th,P1,vec,magnet0,usupportcoef,magnet0); /* Select dofs for 1 magnet*/
-
-		/* Global force for one magnet*/
-		int ncompft = (forctx[].n/2); /* 2 components (x,y)*/
-		real[int] forcmagtot(ncompft);
-		for (int i=0; i<ncompft; i++){
-			forcmagtot[i] = flagdofregionmagnet0[2*i+1]*forctx[][2*i+1];
-		}
-
-		real forcglob= forcmagtot.sum;
-		cout << "Glob forc (1 magnet) = " << forcglob << endl;
-
-		/* Surface of one magnet*/
-		int ncomps = (nodesurfx[].n/2); /* 2 components (x,y)*/
-		real[int] surfmag(ncomps);
-		for (int i=0; i<ncomps; i++){
-			surfmag[i] = flagdofregionmagnet0[2*i]*nodesurfx[][2*i]; /*includes external layer */
-		}
-
-		real surfmagnet = surfmag.sum;
-		cout << " surfmagnet = " << surfmagnet << endl;
-
-		real densforcglob = forcglob/surfmagnet;
-		cout << " Dens forc glob = " << densforcglob << endl;
-
-		ThP1vec vec(forct1) = [0,densforcglob];
-
-		varf forceglob(vec(u),vec(uu)) =  intnd(Th)((regmagnet[0]+regmagnet[1])*vec(forct1)'*vec(uu));
-		ThP1vec vec(forceglobsurf);
-		forceglobsurfx[] = forceglob(0,ThP1vec);
-
-		savevtk(DIRres+"forcglob"+Stringification(t0)+".vtu",Th#namereg1#namereg2,[forceglobsurfx,forceglobsurfy,0],order=order1,dataname=Stringification(t0));
-		
-		varf elementsurf(a,aa)=  intnd(Th)(aa);
-		ThP0scal esurf;
-		esurf[]= elementsurf(0,ThP0scal);
-
-		real[int] ftotmagnet(magnet.n);
-		for(int im=0;im<magnet.n;++im)
-		{
-			FlagDofRegion(Th,P1,scal,magnet[im],[1],onmagnet);
-			ThP1scal onmagnet;
-			onmagnet[]=flagdofregiononmagnet;
-			/*plot(onmagnet,wait=1,fill=1,value=1,cmm=" onmagnet ");*/
-			ThP0scal magnetandlayer=(onmagnet>0);
-			/*plot(magnetandlayer,wait=1,fill=1,value=1,cmm=" magnetandlayer ");*/
-
-			/*ftotmagnet(im) =  intnd(Th)(-magnetandlayer*T2grads(tm2,uu));*/ /* what is "uu" here? */
-
-			cout << "Glob forc (forctx) magnet " << im << " = " << intnd(Th)(forctx*magnetandlayer/esurf) << endl;
-			cout << "Glob forc (forcty) magnet " << im << " = " << intnd(Th)(forcty*magnetandlayer/esurf) << endl;
-
-			/*cout << "surface of magnet " << im << " = " << intnd(Th)(magnetandlayer) << endl;*/
-			cout << "surface of magnet " << im << " = " << intnd(Th)(regmagnet[im]) << endl;
-
-		}
-
+		ThP1vec vec(forct#t0), vec(forctintr#t0), vec(forctinte#t0);
+		forct#t0#x[]=forcemag(0,ThP1vec);
+		forctintr#t0#x[] = forcemagintr(0,ThP1vec);
+		forctinte#t0#x[] = forct#t0#x[];
+		forctinte#t0#x[] -= forctintr#t0#x[];
 
 		if(bplotforces)
 		{
-				plotveccomp(forct," nodal forces ");
-				Thfetype1vec1 fx=forctx, fy=forcty;
+				plotveccomp(forct#t0," nodal forces ");
+				Thfetype1vec1 fx=forct#t0#x, fy=forct#t0#y;
 				real[int] temp=MatExtms'*fx[];
 				fx[]=MatExtms*temp;
-				plot(fx,wait=1,fill=1,value=1,cmm=" comp x of nodal force considering periodicity ");
+				plot(fx,wait=1,fill=1,value=1,cmm=" comp x of nodal force considering periodicity " + Stringification(t0));
 				temp=MatExtms'*fy[];
 				fy[]=MatExtms*temp;
-				plot(fy,wait=1,fill=1,value=1,cmm=" comp y of nodal force considering periodicity ");
+				plot(fy,wait=1,fill=1,value=1,cmm=" comp y of nodal force considering periodicity " + Stringification(t0));
 
 		}
-		savevtk(DIRres+"forc"+Stringification(t0)+".vtu",Th#namereg1#namereg2,[forctx,forcty,0],order=order1,dataname=Stringification(t0));
-		savevtk(DIRres+"forcintr"+Stringification(t0)+".vtu",Th#namereg1#namereg2,[forctintrx,forctintry,0],order=order1,dataname=Stringification(t0));
-		savevtk(DIRres+"forcinter"+Stringification(t0)+".vtu",Th#namereg1#namereg2,[forctintex,forctintey,0],order=order1,dataname=Stringification(t0));
-		savevtk(DIRres+"nodesurf"+Stringification(t0)+".vtu",Th#namereg1#namereg2,[nodesurfx,nodesurfy,0],order=order1,dataname=Stringification(nodesurf));
-		forctx[]./=nodesurfx[]; /*force density = nodal force / node surface */
-		savevtk(DIRres+"densforc"+Stringification(t0)+".vtu",Th#namereg1#namereg2,[forctx,forcty,0],order=order1,dataname=Stringification(denst0));
+		savevtk(DIRres+"forc"+Stringification(t0)+".vtu",Th,[forct#t0#x,forct#t0#y,0],order=order1,dataname=Stringification(t0));
+		savevtk(DIRres+"forcintr"+Stringification(t0)+".vtu",Th,[forctintr#t0#x,forctintr#t0#y,0],order=order1,dataname=Stringification(t0));
+		savevtk(DIRres+"forcinter"+Stringification(t0)+".vtu",Th,[forctinte#t0#x,forctinte#t0#y,0],order=order1,dataname=Stringification(t0));
+		savevtk(DIRres+"nodesurf.vtu",Th,[nodesurfx,nodesurfy,0],order=order1,dataname=Stringification(nodesurf));
+		ThP1vec vec(forcdens);
+		forcdensx[]=forct#t0#x[];
+		forcdensx[]./=nodesurfx[]; /*force density = nodal force / node surface */
+		savevtk(DIRres+"densforc"+Stringification(t0)+".vtu",Th,[forcdensx,forcdensy,0],order=order1,dataname=Stringification(t0));
 	//
 
-	forcnod(,,tm0);
+	forcnod(tm0);
 
+	macro forcglob(t0,regi)
+	real forcglob#t0#regi#x;
+	real forcglob#t0#regi#y;
+	{
+		FlagDofRegion(Th,P1,vec,regi,usupportcoef,regi);
+
+/*
+		ThP1vec vec(onregi);
+		onregix[]=flagdofregion#regi;
+		plot(onregix,wait=1,fill=1,value=1,cmm="P1 on "+Stringification(regi));
+*/
+
+		/* Global force for one magnet*/
+		int ncompft = (forct#t0#x[].n/2); /* 2 components (x,y)*/
+		real[int] forcmagtot(ncompft);
+		for (int i=0; i<ncompft; i++){
+			forcmagtot[i] = flagdofregion#regi[2*i]*forct#t0#x[][2*i];
+		}
+
+		forcglob#t0#regi#x= forcmagtot.sum;
+		cout << "x-component of global force on "+ Stringification(regi) + " for "+Stringification(t0) +"  = " << forcglob#t0#regi#x << endl;
+
+		for (int i=0; i<ncompft; i++){
+			forcmagtot[i] = flagdofregion#regi[2*i+1]*forct#t0#x[][2*i+1];
+		}
+		forcglob#t0#regi#y= forcmagtot.sum;
+		cout << "y-component of global force on "+ Stringification(regi) + " for "+Stringification(t0) +"  = " << forcglob#t0#regi#y << endl;
+	}
+	// EOM forcglob
+
+	int[int]  magnet0 = [magnet[0]];
+	forcglob(tm0,magnet0)
+
+	int[int]  magnet1 = [magnet[1]];
+	forcglob(tm0,magnet1)
+
+	int[int]  magnetsandrotor = [magnet[0],magnet[1],rotor[0]];
+	forcglob(tm0,magnetsandrotor)
+
+
+
+//		/* Surface of one magnet*/
+//		int ncomps = (nodesurfx[].n/2); /* 2 components (x,y)*/
+//		real[int] surfmag(ncomps);
+//		for (int i=0; i<ncomps; i++){
+//			surfmag[i] = flagdofregionmagnet0[2*i]*nodesurfx[][2*i]; /*includes external layer */
+//		}
+//
+//		real surfmagnet = surfmag.sum;
+//		cout << " surfmagnet = " << surfmagnet << endl;
+//
+//		real densforcglob = forcglob0y/surfmagnet;
+//		cout << " Dens forc glob = " << densforcglob << endl;
+//
+//		ThP1vec vec(forct1) = [0,densforcglob];
+//
+//		varf forceglob(vec(u),vec(uu)) =  intnd(Th)((regmagnet[0]+regmagnet[1])*vec(forct1)'*vec(uu));
+//		ThP1vec vec(forceglobsurf);
+//		forceglobsurfx[] = forceglob(0,ThP1vec);
+//
+//		savevtk(DIRres+"forcglob"+Stringification(t0)+".vtu",Th,[forceglobsurfx,forceglobsurfy,0],order=order1,dataname=Stringification(t0));
+//
+//		varf elementsurf(a,aa)=  intnd(Th)(aa);
+//		ThP0scal esurf;
+//		esurf[]= elementsurf(0,ThP0scal);
+//
+//		real[int] ftotmagnet(magnet.n);
+//		for(int im=0;im<magnet.n;++im)
+//		{
+//			FlagDofRegion(Th,P1,scal,magnet[im],[1],onmagnet);
+//			ThP1scal onmagnet;
+//			onmagnet[]=flagdofregiononmagnet;
+//			/*plot(onmagnet,wait=1,fill=1,value=1,cmm=" onmagnet ");*/
+//			ThP0scal magnetandlayer=(onmagnet>0);
+//			/*plot(magnetandlayer,wait=1,fill=1,value=1,cmm=" magnetandlayer ");*/
+//
+//			/*ftotmagnet(im) =  intnd(Th)(-magnetandlayer*T2grads(tm2,uu));*/ /* what is "uu" here? */
+//
+//			cout << "Glob forc (forctx) magnet " << im << " = " << intnd(Th)(forctx*magnetandlayer/esurf) << endl;
+//			cout << "Glob forc (forcty) magnet " << im << " = " << intnd(Th)(forcty*magnetandlayer/esurf) << endl;
+//
+//			/*cout << "surface of magnet " << im << " = " << intnd(Th)(magnetandlayer) << endl;*/
+//			/*cout << "surface of magnet " << im << " = " << intnd(Th)(regmagnet[im]*nodesurfx/esurf) << endl;*/
+//			cout << "surface of magnet " << im << " = " << intnd(Th)(regmagnet[im]) << endl;
+//		}
 
 ENDIFMACRO
 
@@ -683,7 +712,7 @@ IFMACRO(COMP2D3D,1)
 		varf forcemag(vec(u),vec(uu)) =  intnd(Th)(-T2grads(tm0,uu));
 		varf forcemagintr(vec(u),vec(uu)) =  intnd(Th)(-T2grads(tm0i,uu)); /* Intrinsic forces */
 		varf forcemaginte(vec(u),vec(uu)) =  intnd(Th)(-T2grads(tm0,uu)+T2grads(tm0i,uu)); /* Interaction forces */
-		
+
 		ThP1vec vec(forct), vec(forctintr), vec(forctinte);
 		forctx[]=forcemag(0,ThP1vec);
 		forctintrx[]=forcemagintr(0,ThP1vec);
@@ -695,7 +724,7 @@ IFMACRO(COMP2D3D,1)
 		savevtk(DIRres+"nodevol"+Stringification(t0)+".vtu",Th#namereg1#namereg2,[nodevolx,nodevoly,nodevolz],order=order1,dataname=Stringification(nodevol));
 		forctx[]./=nodevolx[]; /*force density = nodal force / node volume */
 		savevtk(DIRres+"densforc"+Stringification(t0)+".vtu",Th#namereg1#namereg2,[forctx,forcty,forctz],order=order1,dataname=Stringification(denst0));
-		
+
 		/*
 		FEspace(Th23,P0,vec);
 		Th23P0vec vec(b3)=vec(b),vec(b3cyl);
@@ -725,6 +754,8 @@ IFMACRO(COMP2D3D,1)
 
 ENDIFMACRO
 
+/* volume associated to global force */
+real globvol = intnd(Th)(regmagnet[0]+regmagnet[1]+regrotor[0]);
 
 // ELASTICITY
 
@@ -790,7 +821,7 @@ IFMACRO(ELAST,1)
 	macro support2(rotor,magnet)
 
 		SubFEspace(real,Th,P1,vec,elast)
-		/*AddDirichlet(Th,P1,vec,elast,flagdofboundaryrintP1vec)*/
+		AddDirichlet(Th,P1,vec,elast,flagdofboundaryrintP1vec)
 		real[int] notflagdofregion#rotor#magnet#P1vec(flagdofregion#rotor#magnet#P1vec.n);
 		notflagdofregion#rotor#magnet#P1vec(:)=1;
 		notflagdofregion#rotor#magnet#P1vec-=flagdofregion#rotor#magnet#P1vec;
@@ -831,9 +862,10 @@ IFMACRO(ELAST,1)
 	IsotropicStiffnessLame(C,lambda,mu);
 
 	macro varfelast(rotor,magnet)
-	varf elast(vec(u),vec(uu))=  intnd(Th)((reg#rotor#magnet)*gradsT22grads(u,C,uu))
-	                         + intnd(Th)((reg#rotor#magnet)*(-T2grads(tm0,uu)+T2grads(tm0i,uu))) /* Intrinsic force */
+	varf elast(vec(u),vec(uu))=  intnd(Th)(gradsT22grads(u,C,uu))
+	                         + intnd(Th)((T2grads(tm0,uu)-T2grads(tm0i,uu))) /* Intrinsic force */
 	                         /*- intnd(Th)((regmagnet[0])*vec(forct1)'*vec(uu))*/ /* Global force applied in magnets*/
+													 /*-intnd(Th)((reg#rotor#magnet)*forcglobtm0magnetsandrotory/globvol*uuy)*/ /* y-component of global force applied as uniform force density in magnets and rotor*/
 					                   ;
 	// EOM
 
@@ -880,7 +912,8 @@ IFMACRO(ELAST,1)
 	AA=MatExtelast'*Atemp1; //restricted matrix
 	real[int] BBrest=MatExtelast'*BB; //restricted RHS
 
-	set(AA,solver=CG);
+	/*set(AA,solver=CG);*/
+	set(AA,solver=UMFPACK);
 
 	cout << " end build restricted (iso and periodicity) system" << endl;
 
@@ -896,6 +929,12 @@ IFMACRO(ELAST,1)
 	plotveccomp(u,"solution")
 
 	tens2(sigma1) =  T22grads(C,u);
+
+	plottens2comp(sigma1,"solution")
+	ThP0tens2 tens2(sigmarotor)=tens2(regrotor[0]*sigma1);
+	plottens2comp(sigmarotor,"solution")
+
+
 
 	IFMACRO(DIM,2)
 

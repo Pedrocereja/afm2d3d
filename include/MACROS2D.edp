@@ -17,6 +17,12 @@ plot(a#x,b#x,wait=1,fill=1,value=1,cmm=Stringification(a)+"x : "+txt);
 plot(a#y,b#y,wait=1,fill=1,value=1,cmm=Stringification(a)+"y : "+txt);
 //
 
+macro plottens2comp(a,txt)
+plot(a#xx,wait=1,fill=1,value=1,cmm=Stringification(a)+"xx : "+txt);
+plot(a#yy,wait=1,fill=1,value=1,cmm=Stringification(a)+"yy : "+txt);
+plot(a#xy,wait=1,fill=1,value=1,cmm=Stringification(a)+"xy : "+txt);
+//
+
 macro tens22compi(A,i) A#xxxx#i,A#yyyy#i,A#xyxy#i,A#yyxy#i,A#xxxy#i,A#xxyy#i //
 macro tens22comp(A) tens22compi(A,) //
 macro tens22(A) [tens22comp(A)] //
@@ -109,13 +115,13 @@ macro T22grads(C,u) [ C#xxxx*dx(u#x) + C#xxyy*dy(u#y),
                       C#xyxy*(dy(u#x)+dx(u#y))] //
 
 macro tens2offdiagx2(U) [ U#xx, U#yy, 2*U#xy] //
-macro gradsoffdiagx2(u) [ dx(uu#x),dy(uu#y),(dy(uu#x)+dx(uu#y))] //
+macro gradsoffdiagx2(uu) [ dx(uu#x),dy(uu#y),(dy(uu#x)+dx(uu#y))] //
 
 macro T2T22T2(U,C,T)  (tens2offdiagx2(U)'*T22T2(C,T))//
 
 macro T2T22grads(U,C,u) (tens2offdiagx2(U)'*T22grads(C,u))//
 
-macro gradsT22grads(uu,C,u) (gradsoffdiagx2(u)'*T22grads(C,u))//
+macro gradsT22grads(uu,C,u) (gradsoffdiagx2(uu)'*T22grads(C,u))//
 
 macro T2T2(U,T)  (tens2offdiagx2(U)'*tens2(T))//
 

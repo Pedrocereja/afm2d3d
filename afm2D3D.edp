@@ -582,10 +582,11 @@ IFMACRO(DIM,2)
 	nodesurfx[]=nodesurface(0,ThP1vec);
 
 	macro forcnod(t0)
+	ThP1vec vec(forct#t0), vec(forctintr#t0), vec(forctinte#t0);
+	{
 		varf forcemag(vec(u),vec(uu)) =  intnd(Th)(-T2grads(t0,uu));
 		varf forcemagintr(vec(u),vec(uu)) =  intnd(Th)(-T2grads(t0#i,uu)); /* Intrinsic forces */
 
-		ThP1vec vec(forct#t0), vec(forctintr#t0), vec(forctinte#t0);
 		forct#t0#x[]=forcemag(0,ThP1vec);
 		forctintr#t0#x[] = forcemagintr(0,ThP1vec);
 		forctinte#t0#x[] = forct#t0#x[];
@@ -611,9 +612,12 @@ IFMACRO(DIM,2)
 		forcdensx[]=forct#t0#x[];
 		forcdensx[]./=nodesurfx[]; /*force density = nodal force / node surface */
 		savevtk(DIRres+"densforc"+Stringification(t0)+".vtu",Th,[forcdensx,forcdensy,0],order=order1,dataname=Stringification(t0));
+	}
 	//
 
 	forcnod(tm0);
+	forcnod(tm1);
+	forcnod(tm2);
 
 	macro forcglob(t0,regi)
 	real forcglob#t0#regi#x;
@@ -644,15 +648,17 @@ IFMACRO(DIM,2)
 		cout << "y-component of global force on "+ Stringification(regi) + " for "+Stringification(t0) +"  = " << forcglob#t0#regi#y << endl;
 	}
 	// EOM forcglob
-
+/*
 	int[int]  magnet0 = [magnet[0]];
 	forcglob(tm0,magnet0)
 
 	int[int]  magnet1 = [magnet[1]];
 	forcglob(tm0,magnet1)
-
+*/
 	int[int]  magnetsandrotor = [magnet[0],magnet[1],rotor[0]];
 	forcglob(tm0,magnetsandrotor)
+	forcglob(tm1,magnetsandrotor)
+	forcglob(tm2,magnetsandrotor)
 
 
 

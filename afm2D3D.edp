@@ -431,7 +431,11 @@ if(1)
 	// Fields for the intrinsic forces
 	I1 = 0;
 	vec1(JJ) = vec1(I1*Jplus0)+vec1(I1*Jminus0)+vec1(I1*Jplus1)+vec1(I1*Jminus1);
-	nu = nupm*(regmagnet[0]+regmagnet[1])+nu0*(1-(regmagnet[0]+regmagnet[1]));
+	/*nu = nupm*(regmagnet[0]+regmagnet[1])+nu0*(1-(regmagnet[0]+regmagnet[1]));*/
+	nu = nu0*regstator[0]+nuiron*regrotor[0]+nupm*(regmagnet[0]+regmagnet[1])+nu0*regair[0]
+	              +nucoil*(regphaseplus[0]+regphaseplus[1]+regphaseplus[2]
+	                     + regphaseminus[0]+regphaseminus[1]+regphaseminus[2]);
+
 
 	matrix AA2=magstat(Thfetype1vec1,Thfetype1vec1);
 	real[int] BB2=magstat(0,Thfetype1vec1);
@@ -861,15 +865,15 @@ IFMACRO(ELAST,1)
 
 	IsotropicStiffnessLame(C,lambda,mu);
 
-	macro varfelast(rotor,magnet)
+	macro varfelast(rotor,magnet,tm)
 	varf elast(vec(u),vec(uu))=  intnd(Th)(gradsT22grads(u,C,uu))
-	                         /*+ intnd(Th)((T2grads(tm0,uu)-T2grads(tm0i,uu)))*/ /* Intrinsic force */
+	                         + intnd(Th)((T2grads(tm,uu)-T2grads(tm#i,uu))) /* Intrinsic force */
 	                         /*- intnd(Th)((regmagnet[0])*vec(forct1)'*vec(uu))*/ /* Global force applied in magnets*/
-													 -intnd(Th)((reg#rotor#magnet)*forcglobtm0magnetsandrotory/globvol*uuy) /* y-component of global force applied as uniform force density in magnets and rotor*/
+													 /*-intnd(Th)((reg#rotor#magnet)*forcglobtm0magnetsandrotory/globvol*uuy) */ /* y-component of global force applied as uniform force density in magnets and rotor*/
 					                   ;
 	// EOM
 
-	varfelast(rotor,magnet);  // Choose between (rotor,magnet) or (stator,coil)
+	varfelast(rotor,magnet,tm2);  // Choose between (rotor,magnet) or (stator,coil)
 
 	cout << "build finite element system" << endl;
 	matrix AA=elast(ThP1vec,ThP1vec);
@@ -912,8 +916,8 @@ IFMACRO(ELAST,1)
 	AA=MatExtelast'*Atemp1; //restricted matrix
 	real[int] BBrest=MatExtelast'*BB; //restricted RHS
 
-	/*set(AA,solver=CG);*/
-	set(AA,solver=UMFPACK);
+	set(AA,solver=CG);
+	/*set(AA,solver=UMFPACK);*/
 
 	cout << " end build restricted (iso and periodicity) system" << endl;
 
@@ -924,28 +928,28 @@ IFMACRO(ELAST,1)
 
 	cout <<"span solution to original system" << endl;
 	ux[]=MatExtelast*solper; //extends the solution to the original problem
-	cout <<"span solution to original system" << endl;
+	cout <<"end span solution to original system" << endl;
 
-	plotveccomp(u,"solution")
 
 	tens2(sigma1) =  T22grads(C,u);
-
-	plottens2comp(sigma1,"solution")
 	ThP0tens2 tens2(sigmarotor)=tens2(regrotor[0]*sigma1);
-	plottens2comp(sigmarotor,"solution")
 
 
 
 	IFMACRO(DIM,2)
 
 	macro dirres(rotor,magnet,tm0)
-
-	mesh Th#rotor#magnet = trunc(Th,reg#rotor#magnet>0.5);
-	plot(Th#rotor#magnet,wait=1,cmm="reg"+Stringification(rotor#magnet));
-	DIRres="results/2D/"+Stringification(rotor)+Stringification(magnet)+"/";
-	savevtk(DIRres+"sigma"+Stringification(tm0)+".vtu",Th#rotor#magnet,tens2(sigma1),order=order0,dataname="sigma"+Stringification(tm0));
-
+		mesh Th#rotor#magnet = trunc(Th,reg#rotor#magnet>0.5);
+		plot(Th#rotor#magnet,wait=1,cmm="reg"+Stringification(rotor#magnet));
+		DIRres="results/2D/"+Stringification(rotor)+Stringification(magnet)+"/";
+		savevtk(DIRres+"sigma"+Stringification(tm0)+".vtu",Th#rotor#magnet,tens2(sigma1),order=order0,dataname="sigma"+Stringification(tm0));
+		savevtk(DIRres+"sigmarotor"+Stringification(tm0)+".vtu",Th#rotor#magnet,tens2(sigmarotor),order=order0,dataname="sigmarotor"+Stringification(tm0));
+		savevtk(DIRres+"u"+Stringification(tm0)+".vtu",Th#rotor#magnet,vec(u),order=order1,dataname="u"+Stringification(tm0));
 	//
+
+	plotveccomp(u,"solution")
+	plottens2comp(sigma1,"solution")
+	plottens2comp(sigmarotor,"solution")
 
 	ENDIFMACRO
 
@@ -975,7 +979,7 @@ IFMACRO(ELAST,1)
 	ENDIFMACRO
 
 
-	dirres(rotor,magnet,tm1);  // Choose between (rotor,magnet) or (stator,coil)
+	dirres(rotor,magnet,tm2);  // Choose between (rotor,magnet) or (stator,coil)
 
 
 ENDIFMACRO

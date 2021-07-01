@@ -604,9 +604,9 @@ IFMACRO(DIM,2)
 				plot(fy,wait=1,fill=1,value=1,cmm=" comp y of nodal force considering periodicity " + Stringification(t0));
 
 		}
-		savevtk(DIRres+"forc"+Stringification(t0)+".vtu",Th,[forct#t0#x,forct#t0#y,0],order=order1,dataname=Stringification(t0));
-		savevtk(DIRres+"forcintr"+Stringification(t0)+".vtu",Th,[forctintr#t0#x,forctintr#t0#y,0],order=order1,dataname=Stringification(t0));
-		savevtk(DIRres+"forcinter"+Stringification(t0)+".vtu",Th,[forctinte#t0#x,forctinte#t0#y,0],order=order1,dataname=Stringification(t0));
+		savevtk(DIRres+"forc"+Stringification(t0)+".vtu",Th,[forct#t0#x,forct#t0#y,0],order=order1,dataname="nf");
+		savevtk(DIRres+"forcintr"+Stringification(t0)+".vtu",Th,[forctintr#t0#x,forctintr#t0#y,0],order=order1,dataname="nf");
+		savevtk(DIRres+"forcinter"+Stringification(t0)+".vtu",Th,[forctinte#t0#x,forctinte#t0#y,0],order=order1,dataname="nf");
 		savevtk(DIRres+"nodesurf.vtu",Th,[nodesurfx,nodesurfy,0],order=order1,dataname=Stringification(nodesurf));
 		ThP1vec vec(forcdens);
 		forcdensx[]=forct#t0#x[];
@@ -618,6 +618,7 @@ IFMACRO(DIM,2)
 	forcnod(tm0);
 	forcnod(tm1);
 	forcnod(tm2);
+	forcnod(tm3);
 
 	macro forcglob(t0,regi)
 	real forcglob#t0#regi#x;
@@ -659,6 +660,7 @@ IFMACRO(DIM,2)
 	forcglob(tm0,magnetsandrotor)
 	forcglob(tm1,magnetsandrotor)
 	forcglob(tm2,magnetsandrotor)
+	forcglob(tm3,magnetsandrotor)
 
 
 
@@ -728,9 +730,9 @@ IFMACRO(COMP2D3D,1)
 		forctintrx[]=forcemagintr(0,ThP1vec);
 		forctintex[] = forcemaginte(0,ThP1vec);
 
-		savevtk(DIRres+"forc"+Stringification(t0)+".vtu",Th#namereg1#namereg2,vec(forct),order=order1,dataname=Stringification(t0));
-		savevtk(DIRres+"forcintr"+Stringification(t0)+".vtu",Th#namereg1#namereg2,vec(forctintr),order=order1,dataname=Stringification(t0));
-		savevtk(DIRres+"forcinter"+Stringification(t0)+".vtu",Th#namereg1#namereg2,vec(forctinte),order=order1,dataname=Stringification(t0));
+		savevtk(DIRres+"forc"+Stringification(t0)+".vtu",Th#namereg1#namereg2,vec(forct),order=order1,dataname="fn");
+		savevtk(DIRres+"forcintr"+Stringification(t0)+".vtu",Th#namereg1#namereg2,vec(forctintr),order=order1,dataname="fn");
+		savevtk(DIRres+"forcinter"+Stringification(t0)+".vtu",Th#namereg1#namereg2,vec(forctinte),order=order1,dataname="fn");
 		savevtk(DIRres+"nodevol"+Stringification(t0)+".vtu",Th#namereg1#namereg2,[nodevolx,nodevoly,nodevolz],order=order1,dataname=Stringification(nodevol));
 		forctx[]./=nodevolx[]; /*force density = nodal force / node volume */
 		savevtk(DIRres+"densforc"+Stringification(t0)+".vtu",Th#namereg1#namereg2,[forctx,forcty,forctz],order=order1,dataname=Stringification(denst0));
@@ -948,9 +950,9 @@ IFMACRO(ELAST,1)
 		mesh Th#rotor#magnet = trunc(Th,reg#rotor#magnet>0.5);
 		plot(Th#rotor#magnet,wait=1,cmm="reg"+Stringification(rotor#magnet));
 		DIRres="results/2D/"+Stringification(rotor)+Stringification(magnet)+"/";
-		savevtk(DIRres+"sigma"+Stringification(tm0)+".vtu",Th#rotor#magnet,tens2(sigma1),order=order0,dataname="sigma"+Stringification(tm0));
-		savevtk(DIRres+"sigmarotor"+Stringification(tm0)+".vtu",Th#rotor#magnet,tens2(sigmarotor),order=order0,dataname="sigmarotor"+Stringification(tm0));
-		savevtk(DIRres+"u"+Stringification(tm0)+".vtu",Th#rotor#magnet,vec(u),order=order1,dataname="u"+Stringification(tm0));
+		savevtk(DIRres+"sigma"+Stringification(tm0)+".vtu",Th#rotor#magnet,tens2(sigma1),order=order0,dataname="sigma");
+		savevtk(DIRres+"sigmarotor"+Stringification(tm0)+".vtu",Th#rotor#magnet,tens2(sigmarotor),order=order0,dataname="sigmarotor");
+		savevtk(DIRres+"u"+Stringification(tm0)+".vtu",Th#rotor#magnet,vec(u),order=order1,dataname="u");
 	//
 
 	plotveccomp(u,"solution")
@@ -977,8 +979,8 @@ IFMACRO(ELAST,1)
 	mesh3 Th#rotor#magnet = trunc(Th,reg#rotor#magnet>0.5);
 	plot(Th#rotor#magnet,wait=1,cmm="reg"+Stringification(rotor#magnet));
 	DIRres="results/3D/"+Stringification(rotor)+Stringification(magnet)+"/";
-	savevtk(DIRres+"sigma"+Stringification(tm0)+".vtu",Th#rotor#magnet,tens2(sigma1),order=order0,dataname="sigma"+Stringification(tm0));
-	savevtk(DIRres+"sigmacyl"+Stringification(tm0)+".vtu",Th#rotor#magnet,tens2(sigcyl),order=order0,dataname="sigmacyl"+Stringification(tm0));
+	savevtk(DIRres+"sigma"+Stringification(tm0)+".vtu",Th#rotor#magnet,tens2(sigma1),order=order0,dataname="sigma");
+	savevtk(DIRres+"sigmacyl"+Stringification(tm0)+".vtu",Th#rotor#magnet,tens2(sigcyl),order=order0,dataname="sigmacyl");
 
 	//
 

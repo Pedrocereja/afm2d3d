@@ -14,7 +14,7 @@ macro ELAST 1 // /* Set 1 to perform the elasticity simulation */
 bool bcheckboundaries=false; // set to "true" to check the boundary regions
 bool bplotmesh=false; // set to "true" to plot the mesh
 bool bplotregion=false; // set to "true" to plot the physical regions
-bool bplotcoils=false; // set to "true" to plot the mesh associated with each coil (3D) or the current density associated to each coil (2D)
+bool bplotcoils=0; // set to "true" to plot the mesh associated with each coil (3D) or the current density associated to each coil (2D)
 bool bplotmag=0; // set to "true" to plot the magnetostatic problem results
 bool bplotmec=false; // set to "true" to plot the mechanical problem results
 bool bplotforces=0; // set to "true" to plot nodal forces (only 2D)
@@ -29,9 +29,10 @@ string[int] comp(3); comp[0]="x"; comp[1]="y"; comp[2]="z";
 
 real Itot = 474.67; // total current in coils section (A) (in the considered configuration, phase U (or 0) has null current, and phase V (or 1) and W (or 2) carry the same current (up to the sign))
 real Jimp = 7.8e5; // Imposed current density
-real I1=Itot;
+real I1=0*Itot;
 
 real Br = 1.17; // remanent induction of the magnets (T)
+//real Br = 0; // remanent induction of the magnets (T)
 
 real mu0 = 4*pi*1e-7; //vacuum permeability
 real nu0 = 1./mu0; // vacuum reluctivity
@@ -376,7 +377,7 @@ vec1firstcomp(adir)[](:)=0; //define a value for each dof involved in the Dirich
 SetDirichletValue(real,Th,fetype1,vec1,magstat,vec1firstcomp(adir)[])
 SetDirichletFlag(real,Th,fetype1,vec1,magstat)
 
-Thfetype1vec1 vec1(a), vec1(a2);;
+Thfetype1vec1 vec1(a), vec1(a2);
 varf magstat(vec1(a),vec1(aa)) = intnd(Th)(nu*rot2(a)'*rot2(aa))
 										- intnd(Th)(vec1(JJ)'*vec1(aa))
 										- intnd(Th)(nu*vec2(Br)'*rot2(aa))
@@ -689,9 +690,9 @@ IFMACRO(DIM,3)
 		forctinte#t0#x[] = forct#t0#x[];
 		forctinte#t0#x[] -= forctintr#t0#x[];
 
-		savevtk(DIRres+"forc"+Stringification(t0)+".vtu",Th,[forct#t0#x,forct#t0#y,0],order=order1,dataname="nf");
-		savevtk(DIRres+"forcintr"+Stringification(t0)+".vtu",Th,[forctintr#t0#x,forctintr#t0#y,0],order=order1,dataname="nf");
-		savevtk(DIRres+"forcinter"+Stringification(t0)+".vtu",Th,[forctinte#t0#x,forctinte#t0#y,0],order=order1,dataname="nf");
+		savevtk(DIRres+"forc"+Stringification(t0)+".vtu",Th,[forct#t0#x,forct#t0#y,forct#t0#z],order=order1,dataname="nf");
+		savevtk(DIRres+"forcintr"+Stringification(t0)+".vtu",Th,[forctintr#t0#x,forctintr#t0#y,forct#t0#z],order=order1,dataname="nf");
+		savevtk(DIRres+"forcinter"+Stringification(t0)+".vtu",Th,[forctinte#t0#x,forctinte#t0#y,forct#t0#z],order=order1,dataname="nf");
 		savevtk(DIRres+"nodevol"+Stringification(t0)+".vtu",Th,[nodevolx,nodevoly,nodevolz],order=order1,dataname=Stringification(nodevol));
 		ThP1vec vec(forcdens);
 		forcdensx[]=forct#t0#x[];
@@ -738,11 +739,11 @@ real forcglob#t0#regi#z;
 {
 	FlagDofRegion(Th,P1,vec,regi,usupportcoef,regi);
 
-/*
+  /*
 	ThP1vec vec(onregi);
 	onregix[]=flagdofregion#regi;
 	plot(onregix,wait=1,fill=1,value=1,cmm="P1 on "+Stringification(regi));
-*/
+	*/
 
 	/* Global force for one magnet*/
 	int ncompft = (forct#t0#x[].n/DIM); /* DIM components (x,y) or (x,y,z)*/
@@ -754,7 +755,8 @@ real forcglob#t0#regi#z;
 	{
 		for (int i=0; i<ncompft; i++)
 		{
-			forcmagtot[i] = flagdofregion#regi[2*i+id]*forct#t0#x[][2*i+id];
+			forcmagtot[i] = flagdofregion#regi[DIM*i]*forctinte#t0#x[][DIM*i+id];
+/*			forcmagtot[i] = flagdofregion#regi[DIM*i]*forctintr#t0#x[][DIM*i+id];*/
 		}
 		temp(id)=forcmagtot.sum;
 		cout << comp[id] <<"-component of global force on "+ Stringification(regi) + " for "+Stringification(t0) +"  = " << temp(id) << endl;
@@ -894,7 +896,7 @@ IFMACRO(ELAST,1)
 					                   ;
 	// EOM
 
-	varfelast(rotor,magnet,tm1);  // Choose between (rotor,magnet) or (stator,coil)
+	varfelast(rotor,magnet,tm0);  // Choose between (rotor,magnet) or (stator,coil)
 
 	cout << "build finite element system" << endl;
 	matrix AA=elast(ThP1vec,ThP1vec);
@@ -1004,7 +1006,7 @@ IFMACRO(ELAST,1)
 	ENDIFMACRO
 
 
-	dirres(rotor,magnet,tm1);  // Choose between (rotor,magnet) or (stator,coil)
+	dirres(rotor,magnet,tm0);  // Choose between (rotor,magnet) or (stator,coil)
 
 
 ENDIFMACRO

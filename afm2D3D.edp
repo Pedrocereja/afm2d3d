@@ -7,12 +7,13 @@ load "iovtk"
 load "medit"
 load "msh3"
 
-macro DIM 3 // /* 2=2D , 3=3D */
+macro MAG 1 // different from 1 to skip magnetic computation (for elastic problem tests)
+macro DIM 2 // /* 2=2D , 3=3D */
 macro COMP2D3D 0 // /* Nodal force comparision between 2D and 3D case, 1 if true */
 macro ELAST 1 // /* Set 1 to perform the elasticity simulation */
 
 bool bcheckboundaries=false; // set to "true" to check the boundary regions
-bool bplotmesh=false; // set to "true" to plot the mesh
+bool bplotmesh=0; // set to "true" to plot the mesh
 bool bplotregion=false; // set to "true" to plot the physical regions
 bool bplotcoils=0; // set to "true" to plot the mesh associated with each coil (3D) or the current density associated to each coil (2D)
 bool bplotmag=0; // set to "true" to plot the magnetostatic problem results
@@ -143,6 +144,8 @@ IFMACRO(DIM,3)
 
 	mesh3 Th = gmshload3("malhas/afm3Dv2.msh");
 	if(bplotmesh) plot(Th,wait=1,cmm="Th");
+	real angle=pi/7;
+	Th=movemesh(Th,[cos(angle/2)*x-sin(angle/2)*y,sin(angle/2)*x+cos(angle/2)*y,z]);
 
 	mesh Th2 = gmshload("malhas/afm2D2.msh");
 	//plot(Th2,wait=1);
@@ -154,13 +157,13 @@ IFMACRO(DIM,3)
 	real tr = 2*(ppi*rm)/p;			// Comprimento do rotor no qual está colado o imã
 	meshS Th23 = movemesh23(Th2, transfo=[0,x-tr/2,y]);
 	Th23 = movemeshS(Th23, transfo=[-rm*sin(y/rm),rm*cos(y/rm),z]);
+	Th23 = movemeshS(Th23,transfo=[cos(angle/2)*x-sin(angle/2)*y,sin(angle/2)*x+cos(angle/2)*y,z]);
 	//plot(Th23,wait=1);
 	if(bplotmesh) plot(Th23,Th,wait=1,cmm="Th and Th23 (for cut at mean radius) ");
 
 
 	bool bplanestress=0;//false for 3D case
 
-	real angle=pi/7;
 	mesh3 Thper=movemesh(Th,[cos(angle)*x-sin(angle)*y,sin(angle)*x+cos(angle)*y,z]);
 	plot(Th,Thper,wait=1);
 
@@ -353,12 +356,14 @@ if(bplotmesh) plot(Th,Thtrunc,wait=1,cmm="Th and trunc mesh");
 
 FEspace(Thtrunc,fetype1,vec1)
 //FEspace(Thtrunc,P1,vec);
+real threshold=0.5;
+
+IFMACRO(MAG,1)
 
 matrix M;
 cout << "compute interpolation matrix..." << endl;
 cout<< "interp 1" << endl;
 matrix M1=interpolate(Thtruncfetype1vec1,Thperfetype1vec1,inside=true,t=true);
-real threshold=0.5;
 CleanSparseMatrix(M1,threshold);
 cout<< "interp 2" << endl;
 matrix M2=interpolate(Thtruncfetype1vec1,Thfetype1vec1,inside=true);
@@ -784,10 +789,13 @@ forcglob(tm3,magnetsandrotor)
 /* volume associated to global force */
 real globvol = intnd(Th)(regmagnet[0]+regmagnet[1]+regrotor[0]);
 
+ENDIFMACRO
+
 // ELASTICITY
 
 IFMACRO(ELAST,1)
 
+IFMACRO(DIM,2)
 	FEspace(Thtrunc,P1,vec);
 
 	matrix MM;
@@ -802,6 +810,68 @@ IFMACRO(ELAST,1)
 	MM = M11*M22;
 	CleanSparseMatrix(MM,threshold);
 
+ENDIFMACRO
+
+IFMACRO(DIM,3)
+	FEspace(Thtrunc,P1,scal);
+	matrix MM;
+	cout << "compute interpolation matrix..." << endl;
+	cout<< "interp 1" << endl;
+	matrix M11=interpolate(ThtruncP1scal,ThperP1scal,inside=true,t=true);
+	CleanSparseMatrix(M11,threshold);
+	cout<< "interp 2" << endl;
+	matrix M22=interpolate(ThtruncP1scal,ThP1scal,inside=true);
+	CleanSparseMatrix(M22,threshold);
+	cout<< "end interp" << endl;
+	MM = M11*M22;
+	CleanSparseMatrix(MM,threshold);
+
+	int[int] I,J;
+	real[int] v;
+	IJvM(I,J,v,MM,-1);
+	int nn=ThP1scal.ndof;
+	int[int][int] indcomp(DIM);
+	for(int id=0;id<DIM;++id)
+	{
+		indcomp[id].resize(nn);
+		for(int i=0;i<nn;++i)
+			indcomp[id](i)=DIM*i+id;
+	}
+
+	int[int] Iv,Jv;
+	real[int] vv;
+/*
+	for(int id=0;id<DIM;++id)
+	{
+		int[int] tempi=indcomp[id](I);
+		int[int] tempj=indcomp[id](J);
+		Iv=[Iv,tempi];
+		Jv=[Jv,tempj];
+		vv=[vv,v];
+	}
+	MM=[Iv,Jv,vv];
+*/
+
+	int[int][int] tempi(DIM), tempj(DIM);
+	for(int id=0;id<DIM;++id)
+	{
+		tempi[id].resize(I.n);
+		tempi[id]=indcomp[id](I);
+		tempj[id].resize(J.n);
+		tempj[id]=indcomp[id](J);
+	}
+	real[int] vrx(v), vry(v), vtx(v),vty(v);
+	vrx*=(-sin(angle));
+	vry*=(cos(angle));
+	vtx*=(cos(angle));
+	vty*=(sin(angle));
+	Iv=[tempi[0],tempi[0],tempi[1],tempi[1],tempi[2]];
+	Jv=[tempj[0],tempj[1],tempj[0],tempj[1],tempj[2]];
+	vv=[     vtx,     vty,     vrx,     vry,       v];
+	MM=[Iv,Jv,vv];
+
+	ENDIFMACRO
+
 	if(bcheckperiodicitydofs)
 	{
 		ux[](:)=1;
@@ -810,6 +880,7 @@ IFMACRO(ELAST,1)
 		ux[]=uperx[];
 		plotveccomp2(u,uper,"nodes involved in the connection (periodicity)");
 	}
+
 
 	macro support(Th,P0scal,rotor,magnet)
 
@@ -896,7 +967,7 @@ IFMACRO(ELAST,1)
 					                   ;
 	// EOM
 
-	varfelast(rotor,magnet,tm0);  // Choose between (rotor,magnet) or (stator,coil)
+	varfelast(rotor,magnet,tm1);  // Choose between (rotor,magnet) or (stator,coil)
 
 	cout << "build finite element system" << endl;
 	matrix AA=elast(ThP1vec,ThP1vec);
@@ -1006,7 +1077,7 @@ IFMACRO(ELAST,1)
 	ENDIFMACRO
 
 
-	dirres(rotor,magnet,tm0);  // Choose between (rotor,magnet) or (stator,coil)
+	dirres(rotor,magnet,tm1);  // Choose between (rotor,magnet) or (stator,coil)
 
 
 ENDIFMACRO

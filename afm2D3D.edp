@@ -7,12 +7,12 @@ load "iovtk"
 load "medit"
 load "msh3"
 
-macro MAG 1 // different from 1 to skip magnetic computation (for elastic problem tests)
-macro DIM 2 // /* 2=2D , 3=3D */
+macro MAG 0 // different from 1 to skip magnetic computation (for elastic problem tests)
+macro DIM 3 // /* 2=2D , 3=3D */
 macro COMP2D3D 0 // /* Nodal force comparision between 2D and 3D case, 1 if true */
-macro ELAST 1 // /* Set 1 to perform the elasticity simulation */
+macro ELAST 0 // /* Set 1 to perform the elasticity simulation */
 
-bool bcheckboundaries=false; // set to "true" to check the boundary regions
+bool bcheckboundaries=true; // set to "true" to check the boundary regions
 bool bplotmesh=0; // set to "true" to plot the mesh
 bool bplotregion=false; // set to "true" to plot the physical regions
 bool bplotcoils=0; // set to "true" to plot the mesh associated with each coil (3D) or the current density associated to each coil (2D)
@@ -192,7 +192,7 @@ IFMACRO(DIM,3)
 	}
 	// EOM
 	// surface regions
-	int nbnd=19;
+	int nbnd=20;
 	int[int][int] bnd(nbnd);
 	string[int] bndname(nbnd);
 	int ibnd=0;
@@ -224,6 +224,10 @@ IFMACRO(DIM,3)
 	bnd[ibnd] = [20426,20427,20428,20429,20430,20431,20432,20433,20434,20435];
 	bndname[ibnd] = "rintrot";
 
+	ibnd++;
+	bnd[ibnd] = [20467,20468,20469,20470,20471,20472,20473,20474,20475,20476,20488,20489,20490,20491,20492,20493,20494,20495,20496,20497,20436,20437,20438,20439,20440,20441,20442,20443,20444,20445];
+	bndname[ibnd] = "surfrotsup";
+
 	//in and out surfaces for each phase winding (plus and minus)
 	int[int][int] mpio(4*3); //minus/plus in/out boundary region indexes for the 3 phases
 	int ip=0;
@@ -249,7 +253,7 @@ IFMACRO(DIM,3)
 	sBn0=[sBn0,bnd[ibndname["szmin"]]];
 	sBn0=[sBn0,bnd[ibndname["szmax"]]];
 
-	int[int] sBn02 = bnd[ibndname["rintrot"]];
+	int[int] sBn02 = bnd[ibndname["rintrot"]]; // Or "surfrotsup"
 	//volume regions
 	int[int][int] rotor(1), magnet(2),stator(1),air(1);
 	rotor[0]=[ROTOR];

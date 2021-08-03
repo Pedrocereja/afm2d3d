@@ -1197,6 +1197,5 @@ Volume(num_vol) = {num_sl};
 
 Physical Volume("ROTOR",ROTOR) = {num_vol-1,num_vol};
 
-//
 
 

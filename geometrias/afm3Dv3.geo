@@ -87,6 +87,11 @@ For i In {0:5:1}
 	prote1[] += newp; Point(newp) = {(re+Wcui)*Sin(pts_theta(i)),(re+Wcui)*Cos(pts_theta(i)),hest+hbob+hgap+hima+hrot,pfe};
 	prote2[] += newp; Point(newp) = {re*Sin(pts_theta(i)),re*Cos(pts_theta(i)),hest+hbob+hgap+hima+hrot,pfe};
 
+	// AR ACIMA DO ROTOR
+	psupair1[] += newp; Point(newp) = {ri*Sin(pts_theta(i)),ri*Cos(pts_theta(i)),hest+hbob+hgap+hima+hrot+zair,pair};
+	psupair2[] += newp; Point(newp) = {re*Sin(pts_theta(i)),re*Cos(pts_theta(i)),hest+hbob+hgap+hima+hrot+zair,pair};
+	psupair3[] += newp; Point(newp) = {(ri-Wcui)*Sin(pts_theta(i)),(ri-Wcui)*Cos(pts_theta(i)),hest+hbob+hgap+hima+hrot+zair,pair};
+	psupair4[] += newp; Point(newp) = {(re+Wcui)*Sin(pts_theta(i)),(re+Wcui)*Cos(pts_theta(i)),hest+hbob+hgap+hima+hrot+zair,pair};
 
 EndFor
 
@@ -158,6 +163,13 @@ For i In {0:4:1} // Direção tangencial
 	// Raio externo
 	lnrote1[] += newl; Circle(newl) = {prote1[i],cent[0],prote1[i+1]};
 	lnrote2[] += newl; Circle(newl) = {prote2[i],cent[0],prote2[i+1]};
+
+	// CAMADA DE AR ACIMA DO ROTOR
+	lrsupair1[] += newl; Circle(newl) = {psupair1[i],cent[0],psupair1[i+1]};
+	lrsupair2[] += newl; Circle(newl) = {psupair2[i],cent[0],psupair2[i+1]};
+	lrsupair3[] += newl; Circle(newl) = {psupair3[i],cent[0],psupair3[i+1]};
+	lrsupair4[] += newl; Circle(newl) = {psupair4[i],cent[0],psupair4[i+1]};
+
 
 EndFor
 
@@ -256,6 +268,16 @@ For i In {0:5:1} // Direção z e radial
 	lnrote2z[] += newl; Line(newl) = {pimrot22[i],prote2[i]};
 	lrotep[] += newl; Line(newl) = {prote1[i],prote2[i]};
 	lrotpp[] += newl; Line(newl) = {prot2[i],prote2[i]};
+
+	// CAMADA DE AR ACIMA DO ROTOR
+	lrsupairp1[] += newl; Line(newl) = {psupair1[i],psupair2[i]};
+	lrsupairp2[] += newl; Line(newl) = {psupair1[i],psupair3[i]};
+	lrsupairp3[] += newl; Line(newl) = {psupair2[i],psupair4[i]};
+	lrsupairz1[] += newl; Line(newl) = {prot2[i],psupair1[i]};
+	lrsupairz2[] += newl; Line(newl) = {prote2[i],psupair2[i]};
+	lrsupairz3[] += newl; Line(newl) = {prot1[i],psupair3[i]};
+	lrsupairz4[] += newl; Line(newl) = {prote1[i],psupair4[i]};
+
 
 EndFor	
 
@@ -997,6 +1019,65 @@ For i In {0:4:1}
 	R_Msup_rot_surf[i] = num_ll;
 	R_Msup_rot[i] = num_ps;
 
+	// CAMADA DE AR ACIMA DO ROTOR
+
+	// Raio interno
+	num_ll++;
+	num_ps++;
+	Line Loop(num_ll) = {-lrsupairz3[i],lnrot1[i],lrsupairz3[i+1],-lrsupair3[i]};
+	Plane Surface(num_ll) = {num_ll};
+	Physical Surface(num_ps) = num_ll;
+	R_int1_camsar_surf[i] = num_ll;
+	R_int1_camsar[i] = num_ps;
+
+	num_ll++;
+	num_ps++;
+	Line Loop(num_ll) = {lrsupairp2[i],lrsupair3[i],-lrsupairp2[i+1],-lrsupair1[i]};
+	Plane Surface(num_ll) = {num_ll};
+	Physical Surface(num_ps) = num_ll;
+	R_sup1_camsar_surf[i] = num_ll;
+	R_sup1_camsar[i] = num_ps;
+
+	num_ll++;
+	num_ps++;
+	Line Loop(num_ll) = {lrsupairz1[i],-lnrot2[i],-lrsupairz1[i+1],lrsupair1[i]};
+	Plane Surface(num_ll) = {num_ll};
+	Physical Surface(num_ps) = num_ll;
+	R_int2_camsar_surf[i] = num_ll;
+	R_int2_camsar[i] = num_ps;
+
+	num_ll++;
+	num_ps++;
+	Line Loop(num_ll) = {lrsupair1[i],lrsupairp1[i+1],-lrsupair2[i],-lrsupairp1[i]};
+	Plane Surface(num_ll) = {num_ll};
+	Physical Surface(num_ps) = num_ll;
+	R_supM_camsar_surf[i] = num_ll;
+	R_supM_camsar[i] = num_ps;
+
+	num_ll++;
+	num_ps++;
+	Line Loop(num_ll) = {lrsupairz2[i],-lnrote2[i],-lrsupairz2[i+1],lrsupair2[i]};
+	Plane Surface(num_ll) = {num_ll};
+	Physical Surface(num_ps) = num_ll;
+	R_ext2_camsar_surf[i] = num_ll;
+	R_ext2_camsar[i] = num_ps;
+
+	num_ll++;
+	num_ps++;
+	Line Loop(num_ll) = {-lrsupairp3[i],lrsupair2[i],lrsupairp3[i+1],-lrsupair4[i]};
+	Plane Surface(num_ll) = {num_ll};
+	Physical Surface(num_ps) = num_ll;
+	R_sup3_camsar_surf[i] = num_ll;
+	R_sup3_camsar[i] = num_ps;
+
+
+	num_ll++;
+	num_ps++;
+	Line Loop(num_ll) = {lrsupairz4[i],lrsupair4[i],-lrsupairz4[i+1],-lnrote1[i]};
+	Plane Surface(num_ll) = {num_ll};
+	Physical Surface(num_ps) = num_ll;
+	R_ext1_camsar_surf[i] = num_ll;
+	R_ext1_camsar[i] = num_ps;
 EndFor
 
 For i In {0:5:5}
@@ -1026,6 +1107,31 @@ For i In {0:5:5}
 	Physical Surface(num_ps) = num_ll;
 	R_Mlat_rot_surf[i] = num_ll;
 	R_Mlat_rot[i] = num_ps;
+
+	// CAMADA DE AR ACIMA DO ROTOR
+	num_ll++;
+	num_ps++;
+	Line Loop(num_ll) = {lrsupairz3[i],-lrsupairp2[i],-lrsupairz1[i],lnrotip[i]};
+	Plane Surface(num_ll) = {num_ll};
+	Physical Surface(num_ps) = num_ll;
+	Lat_int_camsar_surf[i] = num_ll;
+	Lat_int_camsar[i] = num_ps;
+
+	num_ll++;
+	num_ps++;
+	Line Loop(num_ll) = {-lrotpp[i],lrsupairz1[i],lrsupairp1[i],-lrsupairz2[i]};
+	Plane Surface(num_ll) = {num_ll};
+	Physical Surface(num_ps) = num_ll;
+	Lat_M_camsar_surf[i] = num_ll;
+	Lat_M_camsar[i] = num_ps;
+
+	num_ll++;
+	num_ps++;
+	Line Loop(num_ll) = {lrsupairz2[i],lrsupairp3[i],-lrsupairz4[i],lrotep[i]};
+	Plane Surface(num_ll) = {num_ll};
+	Physical Surface(num_ps) = num_ll;
+	Lat_ext_camsar_surf[i] = num_ll;
+	Lat_ext_camsar[i] = num_ps;
 EndFor	
 
 // Volume do estator
@@ -1195,7 +1301,26 @@ num_vol++;
 Surface Loop(num_sl) = {R_ext1_rot_surf[],R_ext2_rot_surf[],R_ext1sup_rot_surf[],R_sup_ar3rot_re_surf[],R_extlat_rot_surf[0],R_extlat_rot_surf[5]};
 Volume(num_vol) = {num_sl};
 
-Physical Volume("ROTOR",ROTOR) = {num_vol-1,num_vol};
+num_sl++;
+num_vol++;
+Surface Loop(num_sl) = {R_int2_rot_surf[],R_ext2_rot_surf[],R_Msup_rot_surf[],R_sup3_ar3rot_surf[],R_Mlat_rot_surf[0],R_Mlat_rot_surf[5]};
+Volume(num_vol) = {num_sl};
 
+Physical Volume("ROTOR",ROTOR) = {num_vol-2,num_vol-1,num_vol};
 
+num_sl++;
+num_vol++;
+Surface Loop(num_sl) = {R_int1sup_rot_surf[],R_int1_camsar_surf[],R_sup1_camsar_surf[],R_int2_camsar_surf[],Lat_int_camsar_surf[0],Lat_int_camsar_surf[5]};
+Volume(num_vol) = {num_sl};
 
+num_sl++;
+num_vol++;
+Surface Loop(num_sl) = {R_supM_camsar_surf[],R_ext2_camsar_surf[],Lat_M_camsar_surf[0],Lat_M_camsar_surf[5],R_Msup_rot_surf[],R_int2_camsar_surf[]};
+Volume(num_vol) = {num_sl};
+
+num_sl++;
+num_vol++;
+Surface Loop(num_sl) = {R_ext2_camsar_surf[],R_sup3_camsar_surf[],R_ext1_camsar_surf[],Lat_ext_camsar_surf[0],Lat_ext_camsar_surf[5],R_ext1sup_rot_surf[]};
+Volume(num_vol) = {num_sl};
+
+Physical Volume("ArSUP",ARSUP) = {num_vol-2,num_vol-1,num_vol};

@@ -93,6 +93,22 @@ For i In {0:5:1}
 	psupair3[] += newp; Point(newp) = {(ri-Wcui)*Sin(pts_theta(i)),(ri-Wcui)*Cos(pts_theta(i)),hest+hbob+hgap+hima+hrot+zair,pair};
 	psupair4[] += newp; Point(newp) = {(re+Wcui)*Sin(pts_theta(i)),(re+Wcui)*Cos(pts_theta(i)),hest+hbob+hgap+hima+hrot+zair,pair};
 
+	// AR RAIO INTERNO
+	priair1[] += newp; Point(newp) = {(ri-riair)*Sin(pts_theta(i)),(ri-riair)*Cos(pts_theta(i)),0,pair};
+	priair2[] += newp; Point(newp) = {(ri-riair)*Sin(pts_theta(i)),(ri-riair)*Cos(pts_theta(i)),hest,pair};
+	priair3[] += newp; Point(newp) = {(ri-riair)*Sin(pts_theta(i)),(ri-riair)*Cos(pts_theta(i)),hest+hbob+hgap,pair};
+	priair4[] += newp; Point(newp) = {(ri-riair)*Sin(pts_theta(i)),(ri-riair)*Cos(pts_theta(i)),hest+hbob+hgap+hima,pair};
+	priair5[] += newp; Point(newp) = {(ri-riair)*Sin(pts_theta(i)),(ri-riair)*Cos(pts_theta(i)),hest+hbob+hgap+hima+hrot,pair};
+	priair6[] += newp; Point(newp) = {(ri-riair)*Sin(pts_theta(i)),(ri-riair)*Cos(pts_theta(i)),hest+hbob+hgap+hima+hrot+zair,pair};
+
+	// AR RAIO EXTERNO
+	preair1[] += newp; Point(newp) = {(re+riair)*Sin(pts_theta(i)),(re+riair)*Cos(pts_theta(i)),0,pair};
+	preair2[] += newp; Point(newp) = {(re+riair)*Sin(pts_theta(i)),(re+riair)*Cos(pts_theta(i)),hest,pair};
+	preair3[] += newp; Point(newp) = {(re+riair)*Sin(pts_theta(i)),(re+riair)*Cos(pts_theta(i)),hest+hbob+hgap,pair};
+	preair4[] += newp; Point(newp) = {(re+riair)*Sin(pts_theta(i)),(re+riair)*Cos(pts_theta(i)),hest+hbob+hgap+hima,pair};
+	preair5[] += newp; Point(newp) = {(re+riair)*Sin(pts_theta(i)),(re+riair)*Cos(pts_theta(i)),hest+hbob+hgap+hima+hrot,pair};
+	preair6[] += newp; Point(newp) = {(re+riair)*Sin(pts_theta(i)),(re+riair)*Cos(pts_theta(i)),hest+hbob+hgap+hima+hrot+zair,pair};
+
 EndFor
 
 For i In {0:4:1} // Direção tangencial
@@ -169,6 +185,22 @@ For i In {0:4:1} // Direção tangencial
 	lrsupair2[] += newl; Circle(newl) = {psupair2[i],cent[0],psupair2[i+1]};
 	lrsupair3[] += newl; Circle(newl) = {psupair3[i],cent[0],psupair3[i+1]};
 	lrsupair4[] += newl; Circle(newl) = {psupair4[i],cent[0],psupair4[i+1]};
+
+	// AR RAIO INTERNO
+	lriair1[] += newl; Line(newl) = {priair1[i],priair1[i+1]};
+	lriair2[] += newl; Line(newl) = {priair2[i],priair2[i+1]};
+	lriair3[] += newl; Line(newl) = {priair3[i],priair3[i+1]};
+	lriair4[] += newl; Line(newl) = {priair4[i],priair4[i+1]};
+	lriair5[] += newl; Line(newl) = {priair5[i],priair5[i+1]};
+	lriair6[] += newl; Line(newl) = {priair6[i],priair6[i+1]};
+
+	// AR RAIO EXTERNO
+	lreair1[] += newl; Line(newl) = {preair1[i],preair1[i+1]};
+	lreair2[] += newl; Line(newl) = {preair2[i],preair2[i+1]};
+	lreair3[] += newl; Line(newl) = {preair3[i],preair3[i+1]};
+	lreair4[] += newl; Line(newl) = {preair4[i],preair4[i+1]};
+	lreair5[] += newl; Line(newl) = {preair5[i],preair5[i+1]};
+	lreair6[] += newl; Line(newl) = {preair6[i],preair6[i+1]};
 
 
 EndFor
@@ -278,6 +310,33 @@ For i In {0:5:1} // Direção z e radial
 	lrsupairz3[] += newl; Line(newl) = {prot1[i],psupair3[i]};
 	lrsupairz4[] += newl; Line(newl) = {prote1[i],psupair4[i]};
 
+	// AR RAIO INTERNO
+
+	lriairz2[] += newl; Line(newl) = {priair1[i],priair2[i]};
+	lriairz3[] += newl; Line(newl) = {priair2[i],priair3[i]};
+	lriairz4[] += newl; Line(newl) = {priair3[i],priair4[i]};
+	lriairz5[] += newl; Line(newl) = {priair4[i],priair5[i]};
+	lriairz6[] += newl; Line(newl) = {priair5[i],priair6[i]};
+
+	lriairp2[] += newl; Line(newl) = {pbobf1[i],priair1[i]};
+	lriairp3[] += newl; Line(newl) = {pbobf2[i],priair2[i]};
+	lriairp4[] += newl; Line(newl) = {par3ri1[i],priair3[i]};
+	lriairp5[] += newl; Line(newl) = {pimrot11[i],priair4[i]};
+	lriairp6[] += newl; Line(newl) = {prot1[i],priair5[i]};
+	lriairp7[] += newl; Line(newl) = {psupair3[i],priair6[i]};
+
+	// AR RAIO EXTERNO
+	lreairp2[] += newl; Line(newl) = {pbobat1[i],preair1[i]};
+	lreairp3[] += newl; Line(newl) = {pbobat2[i],preair2[i]};
+	lreairz2[] += newl; Line(newl) = {preair1[i],preair2[i]};
+	lreairp4[] += newl; Line(newl) = {par3re1[i],preair3[i]};
+	lreairz3[] += newl; Line(newl) = {preair2[i],preair3[i]};
+	lreairp5[] += newl; Line(newl) = {pimrot21[i],preair4[i]};
+	lreairz4[] += newl; Line(newl) = {preair3[i],preair4[i]};
+	lreairp6[] += newl; Line(newl) = {prote1[i],preair5[i]};
+	lreairz5[] += newl; Line(newl) = {preair4[i],preair5[i]};
+	lreairp7[] += newl; Line(newl) = {psupair4[i],preair6[i]};
+	lreairz6[] += newl; Line(newl) = {preair5[i],preair6[i]};
 
 EndFor	
 
@@ -1132,7 +1191,278 @@ For i In {0:5:5}
 	Physical Surface(num_ps) = num_ll;
 	Lat_ext_camsar_surf[i] = num_ll;
 	Lat_ext_camsar[i] = num_ps;
-EndFor	
+EndFor
+
+
+For i In {0:4:1}
+
+	// AR RAIO INTERNO
+
+	num_ll++;
+	num_ps++;
+	Line Loop(num_ll) = {-lriairp2[i],-lriair1[i],lriairp2[i+1],lnbobf1[i]};
+	Plane Surface(num_ll) = {num_ll};
+	Physical Surface(num_ps) = num_ll;
+	Inf_camri1ar_surf[i] = num_ll;
+	Inf_camri1ar[i] = num_ps;
+
+	num_ll++;
+	num_ps++;
+	Line Loop(num_ll) = {lriair1[i],-lriairz2[i],-lriair2[i],lriairz2[i+1]};
+	Plane Surface(num_ll) = {num_ll};
+	Physical Surface(num_ps) = num_ll;
+	Ri_camri1ar_surf[i] = num_ll;
+	Ri_camri1ar[i] = num_ps;
+
+	num_ll++;
+	num_ps++;
+	Line Loop(num_ll) = {lriairp3[i],lriair2[i],-lriairp3[i+1],-lnbobf2[i]};
+	Plane Surface(num_ll) = {num_ll};
+	Physical Surface(num_ps) = num_ll;
+	Sup_camri1ar_surf[i] = num_ll;
+	Sup_camri1ar[i] = num_ps;		
+
+	num_ll++;
+	num_ps++;
+	Line Loop(num_ll) = {lriair2[i],lriairz3[i+1],-lriair3[i],-lriairz3[i]};
+	Plane Surface(num_ll) = {num_ll};
+	Physical Surface(num_ps) = num_ll;
+	Ri_camri2ar_surf[i] = num_ll;
+	Ri_camri2ar[i] = num_ps;
+
+	num_ll++;
+	num_ps++;
+	Line Loop(num_ll) = {lriairp4[i],lriair3[i],-lriairp4[i+1],-lnar3ri1[i]};
+	Plane Surface(num_ll) = {num_ll};
+	Physical Surface(num_ps) = num_ll;
+	Sup_camri2ar_surf[i] = num_ll;
+	Sup_camri2ar[i] = num_ps;
+
+	num_ll++;
+	num_ps++;
+	Line Loop(num_ll) = {-lriairz4[i],lriair3[i],lriairz4[i+1],-lriair4[i]};
+	Plane Surface(num_ll) = {num_ll};
+	Physical Surface(num_ps) = num_ll;
+	Ri_camri3ar_surf[i] = num_ll;
+	Ri_camri3ar[i] = num_ps;
+	
+	num_ll++;
+	num_ps++;
+	Line Loop(num_ll) = {lriairp5[i],lriair4[i],-lriairp5[i+1],-lnimrot11[i]};
+	Plane Surface(num_ll) = {num_ll};
+	Physical Surface(num_ps) = num_ll;
+	Sup_camri3ar_surf[i] = num_ll;
+	Sup_camri3ar[i] = num_ps;
+
+	num_ll++;
+	num_ps++;
+	Line Loop(num_ll) = {-lriairz5[i],lriair4[i],lriairz5[i+1],-lriair5[i]};
+	Plane Surface(num_ll) = {num_ll};
+	Physical Surface(num_ps) = num_ll;
+	Ri_camri4ar_surf[i] = num_ll;
+	Ri_camri4ar[i] = num_ps;
+
+	num_ll++;
+	num_ps++;
+	Line Loop(num_ll) = {lriairp6[i],lriair5[i],-lriairp6[i+1],-lnrot1[i]};
+	Plane Surface(num_ll) = {num_ll};
+	Physical Surface(num_ps) = num_ll;
+	Sup_camri4ar_surf[i] = num_ll;
+	Sup_camri4ar[i] = num_ps;
+
+	num_ll++;
+	num_ps++;
+	Line Loop(num_ll) = {-lriairz6[i],lriair5[i],lriairz6[i+1],-lriair6[i]};
+	Plane Surface(num_ll) = {num_ll};
+	Physical Surface(num_ps) = num_ll;
+	Ri_camri5ar_surf[i] = num_ll;
+	Ri_camri5ar[i] = num_ps;
+
+	num_ll++;
+	num_ps++;
+	Line Loop(num_ll) = {lriairp7[i],lriair6[i],-lriairp7[i+1],-lrsupair3[i]};
+	Plane Surface(num_ll) = {num_ll};
+	Physical Surface(num_ps) = num_ll;
+	Sup_camri5ar_surf[i] = num_ll;
+	Sup_camri5ar[i] = num_ps;
+
+	// AR RAIO EXTERNO
+	num_ll++;
+	num_ps++;
+	Line Loop(num_ll) = {lreairp2[i],-lnbobat1[i],-lreairp2[i+1],lreair1[i]};
+	Plane Surface(num_ll) = {num_ll};
+	Physical Surface(num_ps) = num_ll;
+	Inf_camre1ar_surf[i] = num_ll;
+	Inf_camre1ar[i] = num_ps;
+
+	num_ll++;
+	num_ps++;
+	Line Loop(num_ll) = {-lreairp3[i],lnbobat2[i],lreairp3[i+1],-lreair2[i]};
+	Plane Surface(num_ll) = {num_ll};
+	Physical Surface(num_ps) = num_ll;
+	Sup_camre1ar_surf[i] = num_ll;
+	Sup_camre1ar[i] = num_ps;
+
+	num_ll++;
+	num_ps++;
+	Line Loop(num_ll) = {lreairz2[i],lreair2[i],-lreairz2[i+1],-lreair1[i]};
+	Plane Surface(num_ll) = {num_ll};
+	Physical Surface(num_ps) = num_ll;
+	Re_camre1ar_surf[i] = num_ll;
+	Re_camre1ar[i] = num_ps;
+
+	num_ll++;
+	num_ps++;
+	Line Loop(num_ll) = {-lreairp4[i],-lreair3[i],lreairp4[i+1],lnar3re1[i]};
+	Plane Surface(num_ll) = {num_ll};
+	Physical Surface(num_ps) = num_ll;
+	Sup_camre2ar_surf[i] = num_ll;
+	Sup_camre2ar[i] = num_ps;
+
+	num_ll++;
+	num_ps++;
+	Line Loop(num_ll) = {lreairz3[i],lreair3[i],-lreairz3[i+1],-lreair2[i]};
+	Plane Surface(num_ll) = {num_ll};
+	Physical Surface(num_ps) = num_ll;
+	Re_camre2ar_surf[i] = num_ll;
+	Re_camre2ar[i] = num_ps;
+
+	num_ll++;
+	num_ps++;
+	Line Loop(num_ll) = {-lreairp5[i],lnimrot21[i],lreairp5[i+1],-lreair4[i]};
+	Plane Surface(num_ll) = {num_ll};
+	Physical Surface(num_ps) = num_ll;
+	Sup_camre3ar_surf[i] = num_ll;
+	Sup_camre3ar[i] = num_ps;
+
+	num_ll++;
+	num_ps++;
+	Line Loop(num_ll) = {lreairz4[i],lreair4[i],-lreairz4[i+1],-lreair3[i]};
+	Plane Surface(num_ll) = {num_ll};
+	Physical Surface(num_ps) = num_ll;
+	Re_camre3ar_surf[i] = num_ll;
+	Re_camre3ar[i] = num_ps;
+
+	num_ll++;
+	num_ps++;
+	Line Loop(num_ll) = {-lreairp6[i],-lreair5[i],lreairp6[i+1],lnrote1[i]};
+	Plane Surface(num_ll) = {num_ll};
+	Physical Surface(num_ps) = num_ll;
+	Sup_camre4ar_surf[i] = num_ll;
+	Sup_camre4ar[i] = num_ps;
+
+	num_ll++;
+	num_ps++;
+	Line Loop(num_ll) = {lreairz5[i],lreair5[i],-lreairz5[i+1],-lreair4[i]};
+	Plane Surface(num_ll) = {num_ll};
+	Physical Surface(num_ps) = num_ll;
+	Re_camre4ar_surf[i] = num_ll;
+	Re_camre4ar[i] = num_ps;
+
+	num_ll++;
+	num_ps++;
+	Line Loop(num_ll) = {lreairp7[i+1],lrsupair4[i],-lreairp7[i],-lreair6[i]};
+	Plane Surface(num_ll) = {num_ll};
+	Physical Surface(num_ps) = num_ll;
+	Sup_camre5ar_surf[i] = num_ll;
+	Sup_camre5ar[i] = num_ps;
+
+	num_ll++;
+	num_ps++;
+	Line Loop(num_ll) = {lreair6[i],lreairz6[i],-lreair5[i],-lreairz6[i+1]};
+	Plane Surface(num_ll) = {num_ll};
+	Physical Surface(num_ps) = num_ll;
+	Re_camre6ar_surf[i] = num_ll;
+	Re_camre6ar[i] = num_ps;
+
+EndFor
+
+For i In {0:5:5}
+	// AR RAIO INTERNO
+
+	num_ll++;
+	num_ps++;
+	Line Loop(num_ll) = {lriairp2[i],lriairz2[i],-lriairp3[i],-lnbobfz[i]};
+	Plane Surface(num_ll) = {num_ll};
+	Physical Surface(num_ps) = num_ll;
+	Lat_camri1ar_surf[i] = num_ll;
+	Lat_camri1ar[i] = num_ps;
+
+	num_ll++;
+	num_ps++;
+	Line Loop(num_ll) = {lriairp3[i],lriairz3[i],-lriairp4[i],-lnarcarcriz[i],-lnarbobrz1[i],-lnar2rz1[i],-lnar3rz1[i]};
+	Plane Surface(num_ll) = {num_ll};
+	Physical Surface(num_ps) = num_ll;
+	Lat_camri2ar_surf[i] = num_ll;
+	Lat_camri2ar[i] = num_ps;	
+	
+	num_ll++;
+	num_ps++;
+	Line Loop(num_ll) = {lriairp4[i],lriairz4[i],-lriairp5[i],-lnimrotz11[i]};
+	Plane Surface(num_ll) = {num_ll};
+	Physical Surface(num_ps) = num_ll;
+	Lat_camri3ar_surf[i] = num_ll;
+	Lat_camri3ar[i] = num_ps;
+
+	num_ll++;
+	num_ps++;
+	Line Loop(num_ll) = {lriairp5[i],lriairz5[i],-lriairp6[i],-lnrot1z[i]};
+	Plane Surface(num_ll) = {num_ll};
+	Physical Surface(num_ps) = num_ll;
+	Lat_camri4ar_surf[i] = num_ll;
+	Lat_camri4ar[i] = num_ps;
+
+	num_ll++;
+	num_ps++;
+	Line Loop(num_ll) = {lriairp6[i],lriairz6[i],-lriairp7[i],-lrsupairz3[i]};
+	Plane Surface(num_ll) = {num_ll};
+	Physical Surface(num_ps) = num_ll;
+	Lat_camri5ar_surf[i] = num_ll;
+	Lat_camri5ar[i] = num_ps;
+
+	// AR RAIO EXTERNO
+
+	num_ll++;
+	num_ps++;
+	Line Loop(num_ll) = {-lreairp2[i],lnbobatz[i],lreairp3[i],-lreairz2[i]};
+	Plane Surface(num_ll) = {num_ll};
+	Physical Surface(num_ps) = num_ll;
+	Lat_camre1ar_surf[i] = num_ll;
+	Lat_camre1ar[i] = num_ps;
+
+	num_ll++;
+	num_ps++;
+	Line Loop(num_ll) = {lreairp4[i],-lreairp3[i],-lreairz3[i],lnarcarcrez[i],lnarbobrez1[i],lnar2rez1[i],lnar3rez1[i]};
+	Plane Surface(num_ll) = {num_ll};
+	Physical Surface(num_ps) = num_ll;
+	Lat_camre2ar_surf[i] = num_ll;
+	Lat_camre2ar[i] = num_ps;
+
+	num_ll++;
+	num_ps++;
+	Line Loop(num_ll) = {-lreairp4[i],lnimrotz21[i],lreairp5[i],-lreairz4[i]};
+	Plane Surface(num_ll) = {num_ll};
+	Physical Surface(num_ps) = num_ll;
+	Lat_camre3ar_surf[i] = num_ll;
+	Lat_camre3ar[i] = num_ps;
+
+	num_ll++;
+	num_ps++;
+	Line Loop(num_ll) = {-lreairp5[i],lnrote1z[i],lreairp6[i],-lreairz5[i]};
+	Plane Surface(num_ll) = {num_ll};
+	Physical Surface(num_ps) = num_ll;
+	Lat_camre4ar_surf[i] = num_ll;
+	Lat_camre4ar[i] = num_ps;
+
+	num_ll++;
+	num_ps++;
+	Line Loop(num_ll) = {-lreairp6[i],lrsupairz4[i],lreairp7[i],-lreairz6[i]};
+	Plane Surface(num_ll) = {num_ll};
+	Physical Surface(num_ps) = num_ll;
+	Lat_camre5ar_surf[i] = num_ll;
+	Lat_camre5ar[i] = num_ps;
+EndFor
+
 
 // Volume do estator
 num_sl = 101;
@@ -1324,3 +1654,57 @@ Surface Loop(num_sl) = {R_ext2_camsar_surf[],R_sup3_camsar_surf[],R_ext1_camsar_
 Volume(num_vol) = {num_sl};
 
 Physical Volume("ArSUP",ARSUP) = {num_vol-2,num_vol-1,num_vol};
+
+num_sl++;
+num_vol++;
+Surface Loop(num_sl) = {Inf_camri1ar_surf[],Lat_camri1ar_surf[0],Lat_camri1ar_surf[5],Ri_camri1ar_surf[],Sup_camri1ar_surf[],R_int_bobfr_surf[]};
+Volume(num_vol) = {num_sl};
+
+num_sl++;
+num_vol++;
+Surface Loop(num_sl) = {Sup_camri1ar_surf[],R_int_ararc_surf[],R_int1_arbob_surf[],R_int1_ar2_surf[],R_int1_ar3_surf[],Lat_camri2ar_surf[0],Lat_camri2ar_surf[5],Ri_camri2ar_surf[],Sup_camri2ar_surf[]};
+Volume(num_vol) = {num_sl};
+
+num_sl++;
+num_vol++;
+Surface Loop(num_sl) = {Sup_camri2ar_surf[],Lat_camri3ar_surf[0],Lat_camri3ar_surf[5],R_int1_ar3rot_surf[],Ri_camri3ar_surf[],Sup_camri3ar_surf[]};
+Volume(num_vol) = {num_sl};
+
+num_sl++;
+num_vol++;
+Surface Loop(num_sl) = {Sup_camri3ar_surf[],R_int1_rot_surf[],Lat_camri4ar_surf[0],Lat_camri4ar_surf[5],Ri_camri4ar_surf[],Sup_camri4ar_surf[]};
+Volume(num_vol) = {num_sl};
+
+num_sl++;
+num_vol++;
+Surface Loop(num_sl) = {Sup_camri4ar_surf[],Lat_camri5ar_surf[0],Lat_camri5ar_surf[5],R_int1_camsar_surf[],Ri_camri5ar_surf[],Sup_camri5ar_surf[]};
+Volume(num_vol) = {num_sl};
+
+Physical Volume("ArRI",ARRI1) = {num_vol-4,num_vol-3,num_vol-2,num_vol-1,num_vol};
+
+num_sl++;
+num_vol++;
+Surface Loop(num_sl) = {Inf_camre1ar_surf[],R_ext_bobat_surf[],Sup_camre1ar_surf[],Lat_camre1ar_surf[0],Lat_camre1ar_surf[5],Re_camre1ar_surf[]};
+Volume(num_vol) = {num_sl};
+
+num_sl++;
+num_vol++;
+Surface Loop(num_sl) = {Sup_camre2ar_surf[],Sup_camre1ar_surf[],R_ext_ararc_surf[],R_ext1_arbob_surf[],R_ext1_ar2_surf[],R_ext1_ar3_surf[],Re_camre2ar_surf[],Lat_camre2ar_surf[0],Lat_camre2ar_surf[5]};
+Volume(num_vol) = {num_sl};
+
+num_sl++;
+num_vol++;
+Surface Loop(num_sl) = {Sup_camre2ar_surf[],R_ext1_ar3rot_surf[],Sup_camre3ar_surf[],Lat_camre3ar_surf[0],Lat_camre3ar_surf[5],Re_camre3ar_surf[]};
+Volume(num_vol) = {num_sl};
+
+num_sl++;
+num_vol++;
+Surface Loop(num_sl) = {Sup_camre3ar_surf[],Sup_camre4ar_surf[],R_ext1_rot_surf[],Lat_camre4ar_surf[0],Lat_camre4ar_surf[5],Re_camre4ar_surf[]};
+Volume(num_vol) = {num_sl};
+
+num_sl++;
+num_vol++;
+Surface Loop(num_sl) = {Sup_camre5ar_surf[],Sup_camre4ar_surf[],R_ext1_camsar_surf[],Lat_camre5ar_surf[0],Lat_camre5ar_surf[5],Re_camre6ar_surf[]};
+Volume(num_vol) = {num_sl};
+
+Physical Volume("ArRE",ARRE1) = {num_vol-4,num_vol-3,num_vol-2,num_vol-1,num_vol};
